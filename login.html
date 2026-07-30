@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion & Inscription — afima</title>
+  <meta name="description" content="Connectez-vous ou créez votre compte afima pour acheter et vendre sur la marketplace africaine.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png" type="image/png">
+  <meta name="theme-color" content="#111111">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="login.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="login.js" defer></script>
+</head>
+<body>
+
+  <!-- ══ PANNEAU GAUCHE ══ -->
+  <div class="auth-left" aria-hidden="true">
+    <div class="left-noise"></div>
+    <div class="left-glow"></div>
+
+    <a href="index.html" class="left-logo">
+      <img src="logo.png" alt="afima">
+      <span>afima</span>
+    </a>
+
+    <div class="left-content">
+      <div class="left-badge">
+        <i data-lucide="trending-up"></i>
+        Marketplace N°1 en Afrique
+      </div>
+      <h2>La façon la plus simple d'acheter &amp; vendre en Afrique.</h2>
+      <p>Des milliers de vendeurs vous font confiance chaque jour pour atteindre leurs clients.</p>
+
+      <div class="left-stats">
+        <div class="stat-item">
+          <span class="stat-num" data-target="12000">0</span>
+          <span class="stat-label">Produits en ligne</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="4800">0</span>
+          <span class="stat-label">Vendeurs actifs</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="98">0</span>
+          <span class="stat-label">% satisfaction</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="left-cards">
+      <div class="float-card fc1">
+        <i data-lucide="shield-check"></i>
+        <span>Paiement sécurisé</span>
+      </div>
+      <div class="float-card fc2">
+        <i data-lucide="zap"></i>
+        <span>Publication en 2 min</span>
+      </div>
+      <div class="float-card fc3">
+        <i data-lucide="package-check"></i>
+        <span>Livraison rapide</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANNEAU DROIT ══ -->
+  <div class="auth-right">
+    <a href="index.html" class="back-link">
+      <i data-lucide="arrow-left"></i> Retour à l'accueil
+    </a>
+
+    <div class="auth-box">
+      <div class="auth-header">
+        <h1>Bienvenue<span class="accent-dot">.</span></h1>
+        <p id="auth-subtitle">Connectez-vous pour continuer sur afima.</p>
+      </div>
+
+      <!-- Onglets -->
+      <div class="auth-tabs">
+        <button class="tab-btn active" id="tab-login">Se connecter</button>
+        <button class="tab-btn" id="tab-signup">Créer un compte</button>
+        <div class="tab-indicator" id="tabIndicator"></div>
+      </div>
+
+      <!-- Message -->
+      <div id="auth-message" class="message-box hidden" role="alert" aria-live="polite"></div>
+
+      <!-- Formulaire Connexion -->
+      <form id="loginForm" class="auth-form active" novalidate>
+        <div class="input-group">
+          <label for="loginEmail">Adresse e-mail</label>
+          <div class="input-wrap">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input type="email" id="loginEmail" placeholder="votre@email.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="loginPassword">Mot de passe</label>
+          <div class="input-wrap">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" class="toggle-pw" data-target="loginPassword" aria-label="Afficher le mot de passe">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="submit-btn" id="btnLogin">
+          <span>Se connecter</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+
+      <!-- Formulaire Inscription -->
+      <form id="signupForm" class="auth-form" novalidate>
+        <div class="input-group">
+          <label for="signupEmail">Adresse e-mail</label>
+          <div class="input-wrap">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input type="email" id="signupEmail" placeholder="votre@email.com" required autocomplete="email">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="signupPassword">Mot de passe</label>
+          <div class="input-wrap">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input type="password" id="signupPassword" placeholder="6 caractères minimum" minlength="6" required autocomplete="new-password">
+            <button type="button" class="toggle-pw" data-target="signupPassword" aria-label="Afficher le mot de passe">
+              <i data-lucide="eye"></i>
+            </button>
+          </div>
+          <div class="pw-strength" id="pwStrength">
+            <div class="pw-bar" id="pwBar"></div>
+          </div>
+          <span class="pw-label" id="pwLabel"></span>
+        </div>
+        <button type="submit" class="submit-btn" id="btnSignup">
+          <span>Créer mon compte</span>
+          <i data-lucide="arrow-right"></i>
+        </button>
+      </form>
+
+      <p class="auth-footer-note">
+        En continuant, vous acceptez nos <a href="#">Conditions d'utilisation</a> et notre <a href="#">Politique de confidentialité</a>.
+      </p>
+    </div>
+  </div>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

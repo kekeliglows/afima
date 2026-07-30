@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Profil — afima</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png" type="image/png">
+  <meta name="theme-color" content="#111111">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="profil.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="profil.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="dashboard.html" class="btn btn-outline"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+        <li><a href="catalogue.html" class="btn btn-outline"><i data-lucide="layout-grid"></i> Catalogue</a></li>
+        <li><a href="messages.html" class="btn btn-outline"><i data-lucide="message-circle"></i> Messages</a></li>
+        <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="mobile-menu hidden" id="mobileMenu">
+      <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
+      <a href="messages.html" class="mobile-link"><i data-lucide="message-circle"></i> Messages</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="profil-main">
+    <div class="profil-layout">
+
+      <!-- Carte profil gauche -->
+      <aside class="profil-card">
+        <div class="avatar-wrapper" id="avatarWrapper">
+          <img id="avatarImg" src="" alt="Avatar" class="avatar-img hidden">
+          <div class="avatar-placeholder" id="avatarPlaceholder">
+            <i data-lucide="user"></i>
+          </div>
+          <label class="avatar-edit-btn" for="avatarFile" title="Changer la photo">
+            <i data-lucide="camera"></i>
+          </label>
+          <input type="file" id="avatarFile" accept="image/*" class="hidden">
+        </div>
+
+        <h2 id="profilNomDisplay">—</h2>
+        <p id="profilEmailDisplay" class="profil-email">—</p>
+        <p id="profilBioDisplay" class="profil-bio">—</p>
+
+        <div class="profil-meta">
+          <div class="profil-meta-item">
+            <i data-lucide="package"></i>
+            <span id="profilNbProduits">0 produit(s)</span>
+          </div>
+          <div class="profil-meta-item">
+            <i data-lucide="calendar"></i>
+            <span id="profilMembre">Membre depuis —</span>
+          </div>
+        </div>
+
+        <a href="dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
+          <i data-lucide="layout-dashboard"></i> Mon Dashboard
+        </a>
+      </aside>
+
+      <!-- Formulaire édition droite -->
+      <div class="profil-edit">
+        <div class="profil-edit-header">
+          <h2>Modifier mon profil</h2>
+          <p>Ces informations sont visibles par les acheteurs.</p>
+        </div>
+
+        <div id="profilMessage" class="profil-msg hidden" role="alert"></div>
+
+        <form id="profilForm">
+          <div class="input-group">
+            <label for="profilNom">Nom complet</label>
+            <div class="input-wrap">
+              <i data-lucide="user" class="input-icon"></i>
+              <input type="text" id="profilNom" placeholder="Votre nom" autocomplete="name">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="profilTel">Téléphone</label>
+            <div class="input-wrap">
+              <i data-lucide="phone" class="input-icon"></i>
+              <input type="tel" id="profilTel" placeholder="+225 00 00 00 00" autocomplete="tel">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="profilVille">Ville</label>
+            <div class="input-wrap">
+              <i data-lucide="map-pin" class="input-icon"></i>
+              <input type="text" id="profilVille" placeholder="Ex : Abidjan">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="profilBio">Bio / Description</label>
+            <textarea id="profilBio" placeholder="Parlez de vous ou de votre activité..." rows="4"></textarea>
+          </div>
+          <button type="submit" class="submit-btn" id="profilSubmit">
+            <i data-lucide="save"></i>
+            <span>Enregistrer les modifications</span>
+          </button>
+        </form>
+
+        <div class="profil-danger-zone">
+          <h3><i data-lucide="alert-triangle"></i> Zone de danger</h3>
+          <p>La déconnexion mettra fin à votre session sur tous les appareils.</p>
+          <button class="btn-danger-outline" id="btnLogoutDanger">
+            <i data-lucide="log-out"></i> Se déconnecter
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner"><p>&copy; 2026 afima. Tous droits réservés.</p></div>
+  </footer>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

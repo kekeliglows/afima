@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Produit — afima</title>
+  <meta name="description" content="Détail du produit sur afima. Consultez la description, le prix et achetez en toute sécurité.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://afima.app/produit.html">
+  <meta property="og:type" content="product">
+  <meta property="og:site_name" content="afima">
+  <meta property="og:locale" content="fr_FR">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="theme-color" content="#111111">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="produit.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="produit.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+
+      <ul class="header_btn" id="navLinks">
+        <li>
+          <a href="catalogue.html" class="btn btn-outline">
+            <i data-lucide="layout-grid"></i> Catalogue
+          </a>
+        </li>
+        <li>
+          <a href="panier.html" class="btn btn-outline nav-cart" id="navCart">
+            <i data-lucide="shopping-cart"></i>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+            Panier
+          </a>
+        </li>
+        <li>
+          <a href="commandes.html" class="btn btn-outline">
+            <i data-lucide="package"></i> Mes commandes
+          </a>
+        </li>
+        <li>
+          <button class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
+          </button>
+        </li>
+      </ul>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+
+    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
+      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
+      <a href="panier.html" class="mobile-link"><i data-lucide="shopping-cart"></i> Panier</a>
+      <a href="commandes.html" class="mobile-link"><i data-lucide="package"></i> Mes commandes</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+    </div>
+  </header>
+
+  <main class="produit-main" id="produitMain">
+    <!-- Skeleton loader -->
+    <div class="produit-skeleton" id="produitSkeleton">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-info">
+        <div class="skeleton-line w60"></div>
+        <div class="skeleton-line w40"></div>
+        <div class="skeleton-line w80"></div>
+        <div class="skeleton-line w50"></div>
+      </div>
+    </div>
+
+    <!-- Contenu réel (injecté par JS) -->
+    <div class="produit-content hidden" id="produitContent">
+      <a href="catalogue.html" class="back-to-catalogue">
+        <i data-lucide="arrow-left"></i> Retour au catalogue
+      </a>
+
+      <div class="produit-layout">
+        <div class="produit-image-col">
+          <div class="produit-img-wrapper">
+            <img id="produitImg" src="" alt="" loading="eager">
+          </div>
+        </div>
+
+        <div class="produit-info-col">
+          <span class="produit-badge" id="produitBadge"></span>
+          <h1 id="produitTitre"></h1>
+          <p class="produit-prix" id="produitPrix"></p>
+          <p class="produit-description" id="produitDescription"></p>
+
+          <div class="produit-meta">
+            <div class="meta-item">
+              <i data-lucide="layers"></i>
+              <span id="produitStock"></span>
+            </div>
+            <div class="meta-item">
+              <i data-lucide="calendar"></i>
+              <span id="produitDate"></span>
+            </div>
+          </div>
+
+          <div class="produit-qty-row">
+            <label for="qtyInput">Quantité</label>
+            <div class="qty-control">
+              <button type="button" id="qtyMinus" aria-label="Diminuer">
+                <i data-lucide="minus"></i>
+              </button>
+              <input type="number" id="qtyInput" value="1" min="1" max="99" aria-label="Quantité">
+              <button type="button" id="qtyPlus" aria-label="Augmenter">
+                <i data-lucide="plus"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="produit-actions">
+            <button class="btn-acheter" id="btnAcheter">
+              <i data-lucide="zap"></i> Acheter maintenant
+            </button>
+            <button class="btn-panier" id="btnPanier">
+              <i data-lucide="shopping-cart"></i> Ajouter au panier
+            </button>
+          </div>
+
+          <div id="produit-message" class="produit-msg hidden" role="alert"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="produit-error hidden" id="produitError">
+      <i data-lucide="alert-circle"></i>
+      <p>Produit introuvable.</p>
+      <a href="catalogue.html" class="btn btn-primary">Retour au catalogue</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 afima. Tous droits réservés.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

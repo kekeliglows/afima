@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ── SEO PRIMAIRE ── -->
+  <title>Catalogue — afima | Tous les produits disponibles</title>
+  <meta name="description" content="Parcourez le catalogue afima : des milliers de produits à vendre et à acheter. Recherchez, filtrez et trouvez ce qu'il vous faut.">
+  <meta name="keywords" content="catalogue, produits, acheter, marketplace, afima, afrique">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://afima.app/catalogue.html">
+
+  <!-- ── OPEN GRAPH ── -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://afima.app/catalogue.html">
+  <meta property="og:title" content="Catalogue — afima | Tous les produits disponibles">
+  <meta property="og:description" content="Parcourez des milliers de produits sur afima, la marketplace africaine.">
+  <meta property="og:image" content="https://afima.app/og-image.png">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="afima">
+
+  <!-- ── TWITTER CARD ── -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Catalogue — afima">
+  <meta name="twitter:description" content="Parcourez des milliers de produits sur afima.">
+  <meta name="twitter:image" content="https://afima.app/og-image.png">
+
+  <!-- ── FAVICON & THEME ── -->
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="theme-color" content="#111111">
+
+  <!-- ── FONTS & CSS ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="catalogue.css">
+
+  <!-- ── JSON-LD ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": "Catalogue afima",
+    "description": "Catalogue de produits de la marketplace afima",
+    "url": "https://afima.app/catalogue.html",
+    "isPartOf": { "@type": "WebSite", "name": "afima", "url": "https://afima.app/" }
+  }
+  </script>
+
+  <!-- ── SCRIPTS ── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="catalogue.js" defer></script>
+  <script>document.addEventListener('DOMContentLoaded', () => lucide.createIcons());</script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+
+      <ul class="header_btn" id="navLinks">
+        <li>
+          <a href="ajouter-produit.html" class="btn btn-primary">
+            <i data-lucide="plus"></i> Vendre
+          </a>
+        </li>
+        <li>
+          <a href="panier.html" class="btn btn-outline nav-cart">
+            <i data-lucide="shopping-cart"></i>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+            Panier
+          </a>
+        </li>
+        <li>
+          <a href="commandes.html" class="btn btn-outline">
+            <i data-lucide="package"></i> Mes commandes
+          </a>
+        </li>
+        <li>
+          <button class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
+          </button>
+        </li>
+      </ul>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+
+    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
+      <a href="ajouter-produit.html" class="mobile-link mobile-link-primary">
+        <i data-lucide="plus-circle"></i> Vendre un produit
+      </a>
+      <a href="panier.html" class="mobile-link">
+        <i data-lucide="shopping-cart"></i> Panier
+      </a>
+      <a href="commandes.html" class="mobile-link">
+        <i data-lucide="package"></i> Mes commandes
+      </a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+    </div>
+  </header>
+
+  <main class="catalogue-main">
+    <div class="catalogue-header">
+      <h1>Catalogue</h1>
+      <div class="catalogue-controls">
+        <div class="search-wrapper">
+          <i data-lucide="search" class="search-icon"></i>
+          <input type="search" id="searchInput" placeholder="Rechercher un produit..." class="search-input" aria-label="Rechercher un produit">
+        </div>
+        <select id="sortSelect" class="sort-select" aria-label="Trier les produits">
+          <option value="recent">Plus récents</option>
+          <option value="prix-asc">Prix croissant</option>
+          <option value="prix-desc">Prix décroissant</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="message-box" class="hidden" role="alert"></div>
+    <div id="produits-grid" class="produits-grid" aria-live="polite">
+      <div class="skeleton-grid">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 afima. Tous droits réservés.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Mon Panier — afima</title>
+  <meta name="description" content="Votre panier afima. Vérifiez vos articles et passez votre commande.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="theme-color" content="#111111">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="panier.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="panier.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+
+      <ul class="header_btn" id="navLinks">
+        <li>
+          <a href="catalogue.html" class="btn btn-outline">
+            <i data-lucide="layout-grid"></i> Catalogue
+          </a>
+        </li>
+        <li>
+          <a href="panier.html" class="btn btn-outline nav-cart active-nav">
+            <i data-lucide="shopping-cart"></i>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+            Panier
+          </a>
+        </li>
+        <li>
+          <a href="commandes.html" class="btn btn-outline">
+            <i data-lucide="package"></i> Mes commandes
+          </a>
+        </li>
+        <li>
+          <button class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
+          </button>
+        </li>
+      </ul>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+
+    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
+      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
+      <a href="panier.html" class="mobile-link"><i data-lucide="shopping-cart"></i> Panier</a>
+      <a href="commandes.html" class="mobile-link"><i data-lucide="package"></i> Mes commandes</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+    </div>
+  </header>
+
+  <main class="panier-main">
+    <h1 class="panier-title">
+      <i data-lucide="shopping-cart"></i> Mon Panier
+    </h1>
+
+    <div id="panier-message" class="panier-msg hidden" role="alert"></div>
+
+    <div class="panier-layout" id="panierLayout">
+      <!-- Articles (injecté par JS) -->
+      <div class="panier-items" id="panierItems">
+        <div class="panier-empty hidden" id="panierEmpty">
+          <i data-lucide="shopping-cart"></i>
+          <p>Votre panier est vide.</p>
+          <a href="catalogue.html" class="btn btn-primary">Parcourir le catalogue</a>
+        </div>
+      </div>
+
+      <!-- Récapitulatif -->
+      <aside class="panier-recap" id="panierRecap">
+        <h2>Récapitulatif</h2>
+        <div class="recap-line">
+          <span>Sous-total</span>
+          <span id="recapSousTotal">0,00 €</span>
+        </div>
+        <div class="recap-line">
+          <span>Livraison</span>
+          <span class="recap-livraison">Gratuite</span>
+        </div>
+        <div class="recap-line recap-total">
+          <span>Total</span>
+          <span id="recapTotal">0,00 €</span>
+        </div>
+        <button class="btn-commander" id="btnCommander">
+          <i data-lucide="check-circle"></i> Confirmer la commande
+        </button>
+        <a href="catalogue.html" class="btn-continuer">
+          <i data-lucide="arrow-left"></i> Continuer mes achats
+        </a>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 afima. Tous droits réservés.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

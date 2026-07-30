@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ── SEO PRIMAIRE ── -->
+  <title>Vendre un produit — afima | Publiez votre annonce</title>
+  <meta name="description" content="Mettez votre produit en vente sur afima en quelques clics. Ajoutez un titre, une description, un prix et une photo pour publier votre annonce.">
+  <meta name="keywords" content="vendre, publier annonce, produit, afima, marketplace">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="canonical" href="https://afima.app/ajouter-produit.html">
+
+  <!-- ── OPEN GRAPH ── -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://afima.app/ajouter-produit.html">
+  <meta property="og:title" content="Vendre un produit — afima">
+  <meta property="og:description" content="Publiez votre annonce sur afima en quelques clics.">
+  <meta property="og:image" content="https://afima.app/og-image.png">
+  <meta property="og:locale" content="fr_FR">
+  <meta property="og:site_name" content="afima">
+
+  <!-- ── FAVICON & THEME ── -->
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="theme-color" content="#111111">
+
+  <!-- ── FONTS & CSS ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="ajouter-produit.css">
+
+  <!-- ── SCRIPTS ── -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+
+      <ul class="header_btn" id="navLinks">
+        <li>
+          <a href="catalogue.html" class="btn btn-outline">
+            <i data-lucide="layout-grid"></i> Catalogue
+          </a>
+        </li>
+        <li>
+          <button class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
+          </button>
+        </li>
+      </ul>
+
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+
+    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
+      <a href="catalogue.html" class="mobile-link">
+        <i data-lucide="layout-grid"></i> Catalogue
+      </a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+    </div>
+  </header>
+
+  <main class="form-main">
+    <div class="form-card">
+      <div class="form-card-header">
+        <h1>Mettre un produit en vente</h1>
+        <p>Remplissez les informations ci-dessous pour publier votre annonce.</p>
+      </div>
+
+      <form id="produitForm" novalidate>
+        <div class="input-group">
+          <label for="titre">Titre du produit</label>
+          <input type="text" id="titre" placeholder="Ex : iPhone 14 Pro 256Go" required autocomplete="off">
+        </div>
+
+        <div class="input-group">
+          <label for="description">Description</label>
+          <textarea id="description" placeholder="État, caractéristiques, informations utiles..." required></textarea>
+        </div>
+
+        <div class="row-group">
+          <div class="input-group">
+            <label for="prix">Prix (€)</label>
+            <input type="number" id="prix" placeholder="0.00" step="0.01" min="0" required>
+          </div>
+          <div class="input-group">
+            <label for="stock">Quantité</label>
+            <input type="number" id="stock" placeholder="1" min="1" required>
+          </div>
+        </div>
+
+        <div class="image-section">
+          <p class="image-section-label">Image du produit</p>
+
+          <div class="image-preview-wrapper" id="previewWrapper">
+            <img id="imagePreview" src="" alt="Aperçu du produit" class="hidden">
+            <div class="preview-placeholder" id="previewPlaceholder">
+              <i data-lucide="image"></i>
+              <p>L'aperçu apparaîtra ici</p>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label for="photoFile">
+              <i data-lucide="upload"></i> Charger depuis l'appareil
+            </label>
+            <input type="file" id="photoFile" accept="image/*">
+          </div>
+
+          <div class="separator"><span>OU</span></div>
+
+          <div class="input-group">
+            <label for="photoUrlInput">
+              <i data-lucide="link"></i> URL d'une image en ligne
+            </label>
+            <input type="url" id="photoUrlInput" placeholder="https://exemple.com/image.jpg">
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="submit-btn">
+          <i data-lucide="send" id="submitIcon"></i>
+          <span id="submitText">Publier le produit</span>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>&copy; 2026 afima. Tous droits réservés.</p>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

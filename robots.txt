@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Allow: /catalogue.html
+Allow: /login.html
+
+# Pages privées — ne pas indexer
+Disallow: /ajouter-produit.html
+
+Sitemap: https://afima.app/sitemap.xml

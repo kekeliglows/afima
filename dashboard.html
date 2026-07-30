@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Dashboard — afima</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png" type="image/png">
+  <meta name="theme-color" content="#111111">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="dashboard.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="catalogue.html" class="btn btn-outline"><i data-lucide="layout-grid"></i> Catalogue</a></li>
+        <li><a href="messages.html" class="btn btn-outline"><i data-lucide="message-circle"></i> Messages <span class="msg-badge hidden" id="msgBadge"></span></a></li>
+        <li><a href="profil.html" class="btn btn-outline"><i data-lucide="user"></i> Profil</a></li>
+        <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="mobile-menu hidden" id="mobileMenu">
+      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
+      <a href="messages.html" class="mobile-link"><i data-lucide="message-circle"></i> Messages</a>
+      <a href="profil.html" class="mobile-link"><i data-lucide="user"></i> Profil</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="dash-main">
+
+    <!-- En-tête -->
+    <div class="dash-header">
+      <div>
+        <h1>Mon Dashboard</h1>
+        <p id="dashWelcome">Bonjour !</p>
+      </div>
+      <a href="ajouter-produit.html" class="btn btn-primary">
+        <i data-lucide="plus"></i> Nouveau produit
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="dash-stats" id="dashStats">
+      <div class="dash-stat-card">
+        <div class="dsc-icon" style="background:#fffde7"><i data-lucide="package" style="color:#111"></i></div>
+        <div>
+          <p class="dsc-val" id="statProduits">—</p>
+          <p class="dsc-label">Produits en ligne</p>
+        </div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dsc-icon" style="background:#f0fdf4"><i data-lucide="shopping-bag" style="color:#16a34a"></i></div>
+        <div>
+          <p class="dsc-val" id="statVentes">—</p>
+          <p class="dsc-label">Ventes réalisées</p>
+        </div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dsc-icon" style="background:#eff6ff"><i data-lucide="trending-up" style="color:#2563eb"></i></div>
+        <div>
+          <p class="dsc-val" id="statRevenu">—</p>
+          <p class="dsc-label">Revenus totaux</p>
+        </div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dsc-icon" style="background:#fef2f2"><i data-lucide="alert-triangle" style="color:#dc2626"></i></div>
+        <div>
+          <p class="dsc-val" id="statRupture">—</p>
+          <p class="dsc-label">En rupture de stock</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Liste produits -->
+    <div class="dash-section">
+      <div class="dash-section-header">
+        <h2>Mes produits</h2>
+        <div class="dash-search-wrap">
+          <i data-lucide="search" class="dash-search-icon"></i>
+          <input type="search" id="dashSearch" placeholder="Rechercher..." class="dash-search">
+        </div>
+      </div>
+
+      <div id="dashMessage" class="dash-msg hidden" role="alert"></div>
+
+      <div class="dash-table-wrap">
+        <table class="dash-table" id="dashTable">
+          <thead>
+            <tr>
+              <th>Produit</th>
+              <th>Prix</th>
+              <th>Stock</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="dashTableBody">
+            <tr class="skeleton-row"><td colspan="5"><div class="sk-line"></div></td></tr>
+            <tr class="skeleton-row"><td colspan="5"><div class="sk-line"></div></td></tr>
+            <tr class="skeleton-row"><td colspan="5"><div class="sk-line"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Modifier -->
+  <div class="modal-overlay hidden" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="editModalTitle">Modifier le produit</h3>
+        <button class="modal-close" id="editModalClose" aria-label="Fermer"><i data-lucide="x"></i></button>
+      </div>
+      <form id="editForm">
+        <input type="hidden" id="editId">
+        <div class="input-group">
+          <label for="editTitre">Titre</label>
+          <input type="text" id="editTitre" required>
+        </div>
+        <div class="input-group">
+          <label for="editDescription">Description</label>
+          <textarea id="editDescription" rows="3"></textarea>
+        </div>
+        <div class="row-group">
+          <div class="input-group">
+            <label for="editPrix">Prix (€)</label>
+            <input type="number" id="editPrix" step="0.01" min="0" required>
+          </div>
+          <div class="input-group">
+            <label for="editStock">Stock</label>
+            <input type="number" id="editStock" min="0" required>
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="editImageUrl">URL de l'image</label>
+          <input type="url" id="editImageUrl" placeholder="https://...">
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" id="editCancel">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="editSubmit">
+            <i data-lucide="save"></i> Enregistrer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Confirmer suppression -->
+  <div class="modal-overlay hidden" id="deleteModal" role="dialog" aria-modal="true">
+    <div class="modal-box modal-box-sm">
+      <div class="modal-header">
+        <h3>Supprimer ce produit ?</h3>
+        <button class="modal-close" id="deleteModalClose" aria-label="Fermer"><i data-lucide="x"></i></button>
+      </div>
+      <p class="delete-warning">Cette action est irréversible. Le produit sera définitivement supprimé.</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="deleteCancel">Annuler</button>
+        <button class="btn btn-danger" id="deleteConfirm">
+          <i data-lucide="trash-2"></i> Supprimer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner"><p>&copy; 2026 afima. Tous droits réservés.</p></div>
+  </footer>
+  <script>lucide.createIcons();</script>
+</body>
+</html>

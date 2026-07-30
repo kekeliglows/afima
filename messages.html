@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Messages — afima</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="logo.png" type="image/png">
+  <meta name="theme-color" content="#111111">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="messages.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="messages.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="index.html" class="logo">
+        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <span class="logo-text">afima</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="dashboard.html" class="btn btn-outline"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+        <li><a href="catalogue.html" class="btn btn-outline"><i data-lucide="layout-grid"></i> Catalogue</a></li>
+        <li><a href="profil.html" class="btn btn-outline"><i data-lucide="user"></i> Profil</a></li>
+        <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="mobile-menu hidden" id="mobileMenu">
+      <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
+      <a href="profil.html" class="mobile-link"><i data-lucide="user"></i> Profil</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="chat-main">
+    <div class="chat-layout">
+
+      <!-- Sidebar conversations -->
+      <aside class="chat-sidebar" id="chatSidebar">
+        <div class="chat-sidebar-header">
+          <h2>Messages</h2>
+          <span class="unread-total hidden" id="unreadTotal">0</span>
+        </div>
+        <div class="conv-search-wrap">
+          <i data-lucide="search" class="conv-search-icon"></i>
+          <input type="search" id="convSearch" placeholder="Rechercher..." class="conv-search">
+        </div>
+        <div class="conv-list" id="convList">
+          <div class="conv-skeleton">
+            <div class="sk-conv"></div>
+            <div class="sk-conv"></div>
+            <div class="sk-conv"></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Zone de chat -->
+      <div class="chat-area" id="chatArea">
+        <!-- État vide -->
+        <div class="chat-empty" id="chatEmpty">
+          <i data-lucide="message-circle"></i>
+          <p>Sélectionnez une conversation</p>
+          <span>ou attendez qu'un acheteur vous contacte</span>
+        </div>
+
+        <!-- Chat actif -->
+        <div class="chat-active hidden" id="chatActive">
+          <div class="chat-topbar" id="chatTopbar">
+            <button class="chat-back" id="chatBack" aria-label="Retour">
+              <i data-lucide="arrow-left"></i>
+            </button>
+            <div class="chat-topbar-avatar" id="chatTopbarAvatar"></div>
+            <div class="chat-topbar-info">
+              <p class="chat-topbar-name" id="chatTopbarName">—</p>
+              <p class="chat-topbar-sub" id="chatTopbarSub">—</p>
+            </div>
+            <a href="#" class="chat-topbar-product hidden" id="chatTopbarProduct" target="_blank">
+              <i data-lucide="external-link"></i>
+            </a>
+          </div>
+
+          <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+
+          <form class="chat-input-bar" id="chatInputForm">
+            <input type="text" id="chatInput" placeholder="Écrire un message..." autocomplete="off" maxlength="1000">
+            <button type="submit" class="chat-send-btn" aria-label="Envoyer">
+              <i data-lucide="send"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>
