@@ -39,10 +39,10 @@ async function init() {
   if (!session) { window.location.href = 'login.html'; return; }
 
   document.getElementById('btnLogout')?.addEventListener('click', async () => {
-    await supabaseClient.auth.signOut(); window.location.href = 'index.html';
+    await supabaseClient.auth.signOut(); window.location.href = '../index.html';
   });
   document.getElementById('btnLogoutMobile')?.addEventListener('click', async () => {
-    await supabaseClient.auth.signOut(); window.location.href = 'index.html';
+    await supabaseClient.auth.signOut(); window.location.href = '../index.html';
   });
 
   updateCartBadge();

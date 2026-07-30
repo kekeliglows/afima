@@ -192,7 +192,7 @@ async function saveProfile(event) {
 
 function logout() {
   sb.auth.signOut().then(() => { 
-    window.location.href = 'index.html'; 
+    window.location.href = '../index.html'; 
   });
 }
 

@@ -58,7 +58,8 @@ const btnGetStarted = document.querySelector('.get_started');
 if (btnGetStarted) {
   btnGetStarted.addEventListener('click', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    window.location.href = session ? 'catalogue.html' : 'login.html';
+    const pageLink = (page) => window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') ? `html/${page}` : page;
+    window.location.href = session ? pageLink('catalogue.html') : pageLink('login.html');
   });
 }
 
@@ -73,7 +74,7 @@ if (form) {
   // Déconnexion desktop + mobile
   const logout = async () => {
     await supabaseClient.auth.signOut();
-    window.location.href = 'index.html';
+    window.location.href = '../index.html';
   };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);

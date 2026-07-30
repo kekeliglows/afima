@@ -20,18 +20,18 @@
   <meta name="twitter:title" content="afima — Achetez & Vendez facilement en Afrique">
   <meta name="twitter:description" content="La marketplace N°1 en Afrique. Publiez un produit en 2 minutes.">
   <meta name="twitter:image" content="https://afima.app/og-image.png">
-  <link rel="icon" href="logo.png" type="image/png">
-  <link rel="apple-touch-icon" href="logo.png">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="assets/logo.png">
   <meta name="theme-color" content="#111111">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="index.css">
+  <link rel="stylesheet" href="css/index.css">
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebSite","name":"afima","url":"https://afima.app/","description":"Marketplace africaine","potentialAction":{"@type":"SearchAction","target":"https://afima.app/catalogue.html?q={search_term_string}","query-input":"required name=search_term_string"}}
+  {"@context":"https://schema.org","@type":"WebSite","name":"afima","url":"https://afima.app/","description":"Marketplace africaine","potentialAction":{"@type":"SearchAction","target":"https://afima.app/html/catalogue.html?q={search_term_string}","query-input":"required name=search_term_string"}}
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="script.js" defer></script>
+  <script src="js/script.js" defer></script>
 </head>
 <body>
 
@@ -39,12 +39,12 @@
   <header>
     <nav class="navigation" aria-label="Navigation principale">
       <a href="index.html" class="logo">
-        <img src="logo.png" alt="afima Logo" width="36" height="36">
+        <img src="assets/logo.png" alt="afima Logo" width="36" height="36">
         <span class="logo-text">afima</span>
       </a>
       <ul class="header_btn" id="navLinks">
-        <li><a href="login.html" class="btn btn-outline">Connexion</a></li>
-        <li><a href="login.html" class="btn btn-primary">Créer un compte</a></li>
+        <li><a href="html/login.html" class="btn btn-outline">Connexion</a></li>
+        <li><a href="html/login.html" class="btn btn-primary">Créer un compte</a></li>
       </ul>
       <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
         <i data-lucide="menu" class="icon-menu"></i>
@@ -52,8 +52,8 @@
       </button>
     </nav>
     <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
-      <a href="login.html" class="mobile-link"><i data-lucide="log-in"></i> Connexion</a>
-      <a href="login.html" class="mobile-link mobile-link-primary"><i data-lucide="user-plus"></i> Créer un compte</a>
+      <a href="html/login.html" class="mobile-link"><i data-lucide="log-in"></i> Connexion</a>
+      <a href="html/login.html" class="mobile-link mobile-link-primary"><i data-lucide="user-plus"></i> Créer un compte</a>
     </div>
   </header>
 
@@ -84,7 +84,7 @@
             Commencer maintenant
             <i data-lucide="arrow-right"></i>
           </button>
-          <a href="catalogue.html" class="btn-ghost">
+          <a href="html/catalogue.html" class="btn-ghost">
             <i data-lucide="layout-grid"></i>
             Voir le catalogue
           </a>
@@ -198,11 +198,11 @@
         <h2>Prêt à commencer ?</h2>
         <p>Rejoignez des milliers de vendeurs et d'acheteurs sur afima dès aujourd'hui.</p>
         <div class="cta-actions">
-          <a href="login.html" class="cta-btn-primary">
+          <a href="html/login.html" class="cta-btn-primary">
             Créer un compte gratuit
             <i data-lucide="arrow-right"></i>
           </a>
-          <a href="catalogue.html" class="cta-btn-ghost">
+          <a href="html/catalogue.html" class="cta-btn-ghost">
             <i data-lucide="layout-grid"></i>
             Explorer le catalogue
           </a>
@@ -215,7 +215,7 @@
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img src="logo.png" alt="afima" height="28" style="filter:brightness(0) invert(1);opacity:0.7">
+        <img src="assets/logo.png" alt="afima" height="28" style="filter:brightness(0) invert(1);opacity:0.7">
         <span>afima</span>
       </div>
       <p>&copy; 2026 afima. Tous droits réservés.</p>

@@ -38,7 +38,7 @@ async function init() {
   document.getElementById('searchInput').addEventListener('input', renderProduits);
   document.getElementById('sortSelect').addEventListener('change', renderProduits);
 
-  const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = 'index.html'; };
+  const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 }

@@ -184,7 +184,7 @@ function subscribeRealtime() {
 }
 
 function logout() {
-  sb.auth.signOut().then(() => { window.location.href = 'index.html'; });
+  sb.auth.signOut().then(() => { window.location.href = '../index.html'; });
 }
 
 function initHamburger() {

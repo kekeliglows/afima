@@ -178,7 +178,7 @@ function showMsg(text, type) {
   setTimeout(() => box.className = 'dash-msg hidden', 4000);
 }
 
-async function logout() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+async function logout() { await sb.auth.signOut(); window.location.href = '../index.html'; }
 
 function initHamburger() {
   const toggle = document.getElementById('navToggle');
