@@ -1,0 +1,55 @@
+/* Pages Légales (CGU & Confidentialité) */
+.legal-container {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.legal-container h1 {
+  font-size: 1.8rem;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.legal-date {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 24px;
+}
+
+.legal-container section {
+  margin-bottom: 20px;
+}
+
+.legal-container h2 {
+  font-size: 1.2rem;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.legal-container p, .legal-container ul {
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.legal-container ul {
+  padding-left: 20px;
+}
+
+.legal-back {
+  margin-top: 32px;
+}
+
+.legal-back a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.legal-back a:hover {
+  text-decoration: underline;
+}

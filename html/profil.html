@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mon Profil — afima</title>
-  <meta name="description" content="Gérez votre profil afima : mettez à jour votre nom, téléphone, ville, bio et avatar utilisateur.">
+  <meta name="description"
+    content="Gérez votre profil afima : mettez à jour votre nom, téléphone, ville, bio et avatar utilisateur.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="canonical" href="https://afima.app/html/profil.html">
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
   <meta name="theme-color" content="#111111">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/profil.css">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://afima.app/html/profil.html">
   <meta property="og:title" content="Mon Profil — afima">
-  <meta property="og:description" content="Gérez votre profil vendeur et acheteur sur afima, personnalisez votre page et mettez à jour vos informations.">
+  <meta property="og:description"
+    content="Gérez votre profil vendeur et acheteur sur afima, personnalisez votre page et mettez à jour vos informations.">
   <meta property="og:image" content="https://afima.app/og-image.png">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:site_name" content="afima">
@@ -29,6 +33,7 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="../js/profil.js" defer></script>
 </head>
+
 <body>
   <header>
     <nav class="navigation" aria-label="Navigation principale">
@@ -42,7 +47,8 @@
         <li><a href="messages.html" class="btn btn-outline"><i data-lucide="message-circle"></i> Messages</a></li>
         <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
       </ul>
-      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false"
+        aria-controls="mobileMenu">
         <i data-lucide="menu" class="icon-menu"></i>
         <i data-lucide="x" class="icon-close hidden"></i>
       </button>
@@ -51,7 +57,8 @@
       <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
       <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
       <a href="messages.html" class="mobile-link"><i data-lucide="message-circle"></i> Messages</a>
-      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i>
+        Déconnexion</button>
     </div>
   </header>
 
@@ -68,27 +75,29 @@
           <label class="avatar-edit-btn" for="avatarFile" title="Changer la photo">
             <i data-lucide="camera"></i>
           </label>
-          <input type="file" id="avatarFile" accept="image/*" class="hidden">
+          <input type="file" id="avatarFile" accept="image/*" class="hidden" title="Changer la photo de profil"
+            aria-label="Changer la photo de profil">
         </div>
+      </aside>
 
-        <h2 id="profilNomDisplay">—</h2>
-        <p id="profilEmailDisplay" class="profil-email">—</p>
-        <p id="profilBioDisplay" class="profil-bio">—</p>
+      <h2 id="profilNomDisplay">—</h2>
+      <p id="profilEmailDisplay" class="profil-email">—</p>
+      <p id="profilBioDisplay" class="profil-bio">—</p>
 
-        <div class="profil-meta">
-          <div class="profil-meta-item">
-            <i data-lucide="package"></i>
-            <span id="profilNbProduits">0 produit(s)</span>
-          </div>
-          <div class="profil-meta-item">
-            <i data-lucide="calendar"></i>
-            <span id="profilMembre">Membre depuis —</span>
-          </div>
+      <div class="profil-meta">
+        <div class="profil-meta-item">
+          <i data-lucide="package"></i>
+          <span id="profilNbProduits">0 produit(s)</span>
         </div>
+        <div class="profil-meta-item">
+          <i data-lucide="calendar"></i>
+          <span id="profilMembre">Membre depuis —</span>
+        </div>
+      </div>
 
-        <a href="dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
-          <i data-lucide="layout-dashboard"></i> Mon Dashboard
-        </a>
+      <a href="dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
+        <i data-lucide="layout-dashboard"></i> Mon Dashboard
+      </a>
       </aside>
 
       <!-- Formulaire édition droite -->
@@ -144,8 +153,13 @@
   </main>
 
   <footer class="footer">
-    <div class="footer-inner"><p>&copy; 2026 afima. Tous droits réservés.</p></div>
+    <div class="footer-inner">
+      <p>&copy; 2026 afima. Tous droits réservés.</p>
+      <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+<a href="politique-confidentialite.html">Politique de confidentialité</a>
+    </div>
   </footer>
   <script>lucide.createIcons();</script>
 </body>
+
 </html>
