@@ -33,20 +33,53 @@ async function init() {
 }
 
 async function loadStats(userId) {
-  const { data: produits } = await sb.from('produits').select('id, stock').eq('user_id', userId);
-  const { data: commandes } = await sb.from('commande_items')
-    .select('quantite, prix_unitaire, commande_id, commandes!inner(user_id)')
-    .eq('commandes.user_id', userId);
+  let produits = [];
+  try {
+    const { data, error } = await sb.from('produits').select('id, stock, views').eq('user_id', userId);
+    if (error) throw error;
+    produits = data || [];
+  } catch {
+    const { data } = await sb.from('produits').select('id, stock').eq('user_id', userId);
+    produits = data || [];
+  }
 
-  const nbProduits = produits?.length || 0;
-  const ruptures   = produits?.filter(p => p.stock === 0).length || 0;
-  const ventes     = commandes?.reduce((s, i) => s + i.quantite, 0) || 0;
-  const revenu     = commandes?.reduce((s, i) => s + i.prix_unitaire * i.quantite, 0) || 0;
+  const productIds = produits.map(p => p.id);
+  const { data: items = [] } = await sb.from('commande_items').select('quantite, prix_unitaire, produit_id, commande_id');
+  const { data: commandes = [] } = await sb.from('commandes').select('id, created_at');
+  const commandesById = new Map(commandes.map(c => [c.id, c.created_at]));
+
+  const now = new Date();
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+  const ventes = items
+    .filter(item => productIds.includes(item.produit_id))
+    .reduce((sum, item) => sum + (item.quantite || 0), 0);
+
+  const revenu = items
+    .filter(item => productIds.includes(item.produit_id))
+    .reduce((sum, item) => sum + (item.prix_unitaire || 0) * (item.quantite || 0), 0);
+
+  const caMois = items
+    .filter(item => {
+      const commandeDate = commandesById.get(item.commande_id);
+      if (!commandeDate) return false;
+      const date = new Date(commandeDate);
+      return date >= startOfMonth && date < endOfMonth && productIds.includes(item.produit_id);
+    })
+    .reduce((sum, item) => sum + (item.prix_unitaire || 0) * (item.quantite || 0), 0);
+
+  const vues = produits.reduce((sum, p) => sum + (typeof p.views === 'number' ? p.views : 0), 0);
+
+  const nbProduits = produits.length;
+  const ruptures   = produits.filter(p => p.stock === 0).length;
 
   document.getElementById('statProduits').textContent = nbProduits;
   document.getElementById('statVentes').textContent   = ventes;
   document.getElementById('statRevenu').textContent   = revenu.toFixed(2) + ' €';
+  document.getElementById('statCaMois').textContent   = caMois.toFixed(2) + ' €';
   document.getElementById('statRupture').textContent  = ruptures;
+  document.getElementById('statVues').textContent     = vues;
 }
 
 async function loadProduits(userId) {

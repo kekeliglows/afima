@@ -22,6 +22,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/utils/currency.js"></script>
   <script src="../js/produit.js" defer></script>
 </head>
 <body>
@@ -139,6 +140,8 @@
           </div>
 
           <div id="produit-message" class="produit-msg hidden" role="alert"></div>
+
+          <section class="produit-reviews" id="reviewsSection" aria-label="Avis clients"></section>
         </div>
       </div>
     </div>
@@ -151,10 +154,20 @@
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 afima. Tous droits réservés.</p>
-      <a href="conditions-utilisation.html">Conditions d'utilisation</a>
-<a href="politique-confidentialite.html">Politique de confidentialité</a>
-  </footer>
+   <div class="footer-inner">
+     <div class="footer-brand">
+       <img src="../assets/logo.png" alt="afima">
+       <span>afima</span>
+     </div>
+     <p>&copy; 2026 afima. Tous droits réservés.</p>
+     <div class="footer-links">
+       <a href="a-propos.html">À propos</a>
+       <a href="faq.html">FAQ</a>
+       <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+       <a href="politique-confidentialite.html">Politique de confidentialité</a>
+     </div>
+   </div>
+ </footer>
 
   <script>lucide.createIcons();</script>
 </body>

@@ -3,6 +3,8 @@ const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allProduits = [];
+let currentUserId = null;
+let wishlist = [];
 
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
@@ -25,6 +27,8 @@ document.addEventListener('click', e => {
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
+  currentUserId = session.user.id;
+
   if (!session) { window.location.href = 'login.html'; return; }
 
   // Badge panier
@@ -33,6 +37,7 @@ async function init() {
   const badge = document.getElementById('cartBadge');
   if (badge && total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
 
+  await loadWishlist();
   await loadProduits();
 
   document.getElementById('searchInput').addEventListener('input', renderProduits);
@@ -55,6 +60,62 @@ async function loadProduits() {
     return;
   }
   allProduits = data || [];
+  renderProduits();
+}
+
+function renderWishlist() {
+  const section = document.getElementById('wishlistSection');
+  if (!section) return;
+
+  if (!wishlist.length) {
+    section.innerHTML = '';
+    return;
+  }
+
+  section.innerHTML = `
+    <div class="wishlist-title">Vos favoris</div>
+    <div class="wishlist-list">
+      ${wishlist.map(item => `
+        <div class="wishlist-pill">
+          <span>${item.titre}</span>
+          <button type="button" data-id="${item.id}" aria-label="Retirer des favoris">✕</button>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  section.querySelectorAll('button[data-id]').forEach(btn => {
+    btn.addEventListener('click', () => toggleWishlist(btn.dataset.id));
+  });
+}
+
+async function loadWishlist() {
+  try {
+    const { data } = await supabaseClient.from('wishlists').select('*').eq('user_id', currentUserId);
+    wishlist = (data || []).map(item => ({ id: item.product_id, titre: item.product_title || 'Produit' }));
+  } catch {
+    wishlist = [];
+  }
+  renderWishlist();
+}
+
+async function toggleWishlist(productId) {
+  const product = allProduits.find(p => p.id === productId);
+  if (!product) return;
+
+  const exists = wishlist.some(item => item.id === productId);
+  if (exists) {
+    try {
+      await supabaseClient.from('wishlists').delete().eq('user_id', currentUserId).eq('product_id', productId);
+    } catch {}
+    wishlist = wishlist.filter(item => item.id !== productId);
+  } else {
+    try {
+      await supabaseClient.from('wishlists').insert([{ user_id: currentUserId, product_id: productId, product_title: product.titre }]);
+    } catch {}
+    wishlist = [...wishlist, { id: productId, titre: product.titre }];
+  }
+  renderWishlist();
   renderProduits();
 }
 
@@ -86,24 +147,33 @@ function renderProduits() {
     const stockBadge = p.stock > 0
       ? `<span class="card-stock-badge">${p.stock} en stock</span>`
       : `<span class="card-stock-badge out">Rupture</span>`;
+    const isFav = wishlist.some(item => item.id === p.id);
     return `
-      <a href="produit.html?id=${p.id}" class="produit-card" aria-label="Voir ${p.titre}">
+      <div class="produit-card">
         <div class="card-img-wrapper">
-          <div class="img-skeleton"></div>
-          <img src="${p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image'}"
-               alt="${p.titre}" loading="lazy" width="400" height="200"
-               onload="this.previousElementSibling.remove()">
+          <button class="wishlist-btn ${isFav ? 'active' : ''}" data-id="${p.id}" type="button" aria-label="Ajouter aux favoris">
+            <i data-lucide="heart"></i>
+          </button>
+          <a href="produit.html?id=${p.id}" aria-label="Voir ${p.titre}">
+            <img src="${p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image'}"
+                 alt="${p.titre}" loading="lazy" width="400" height="200">
+          </a>
         </div>
-        <div class="card-body">
+        <a href="produit.html?id=${p.id}" class="card-body" aria-label="Voir ${p.titre}">
           <p class="card-titre">${p.titre}</p>
           <p class="card-description">${p.description || ''}</p>
           <div class="card-footer">
-            <span class="card-prix">${typeof formatPrice === 'function' ? formatPrice(p.prix) : parseFloat(p.prix).toFixed(2) + ' €'}</span>
+            <span class="card-prix">${Currency.formatPrice(p.prix)}</span>
             ${stockBadge}
           </div>
-        </div>
-      </a>`;
+        </a>
+      </div>`;
   }).join('');
+
+  grid.querySelectorAll('.wishlist-btn').forEach(btn => {
+    btn.addEventListener('click', () => toggleWishlist(btn.dataset.id));
+  });
+  lucide.createIcons();
 }
 
 init();

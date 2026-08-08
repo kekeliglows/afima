@@ -82,6 +82,43 @@
   gap: 22px;
 }
 
+/* ── WISHLIST ── */
+.wishlist-section {
+  margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wishlist-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #111;
+}
+.wishlist-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.wishlist-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #111;
+}
+.wishlist-pill button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #dc2626;
+  padding: 0;
+}
+
 /* ── CARTE PRODUIT ── */
 /* Carte cliquable (lien) */
 a.produit-card {
@@ -112,6 +149,26 @@ a.produit-card {
   background: #f3f4f6;
   height: 200px;
 }
+
+.wishlist-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(255,255,255,0.9);
+  color: #dc2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.wishlist-btn.active { background: #dc2626; color: #fff; }
+.wishlist-btn svg { width: 18px; height: 18px; }
 
 .produit-card img {
   width: 100%;

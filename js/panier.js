@@ -25,7 +25,7 @@ document.addEventListener('click', e => {
 function getCart() { return JSON.parse(localStorage.getItem('afima_cart') || '[]'); }
 function saveCart(cart) { localStorage.setItem('afima_cart', JSON.stringify(cart)); }
 
-function fmt(n) { return parseFloat(n).toFixed(2).replace('.', ',') + ' €'; }
+function fmt(priceEUR) { return Currency.formatPrice(priceEUR); }
 
 function updateBadge(cart) {
   const total = cart.reduce((s, i) => s + i.qty, 0);
@@ -88,7 +88,6 @@ function renderCart() {
     </div>
   `).join('');
 
-  // Délégation d'événements
   container.querySelectorAll('button[data-action]').forEach(btn => {
     btn.addEventListener('click', () => {
       const cart = getCart();
@@ -114,6 +113,118 @@ function renderCart() {
   lucide.createIcons();
 }
 
+// ── ADRESSE LIVRAISON ──
+async function initAdresse() {
+  const modal = document.getElementById('adresseModal');
+  const btnOpen = document.getElementById('btnChangeAddr');
+  const btnClose = document.getElementById('closeAdresseModal');
+  const form = document.getElementById('adresseForm');
+  const countrySelect = document.getElementById('addrCountry');
+
+  // Peupler les pays
+  Object.entries(LocationService.COUNTRIES).forEach(([code, data]) => {
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = data.name;
+    countrySelect.appendChild(opt);
+  });
+
+  // Détection automatique du pays
+  const detectedCountry = await LocationService.detectCountry();
+  if (detectedCountry && LocationService.COUNTRIES[detectedCountry]) {
+    countrySelect.value = detectedCountry;
+    const phoneInput = document.getElementById('addrPhone');
+    phoneInput.placeholder = LocationService.COUNTRIES[detectedCountry].dial + ' 00 00 00 00';
+  }
+
+  // Afficher l'adresse par défaut
+  renderAdresseDisplay();
+
+  // Charger les adresses sauvegardées
+  renderSavedAddresses();
+
+  // Ouvrir modal
+  btnOpen?.addEventListener('click', () => modal.classList.remove('hidden'));
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  // Soumission formulaire
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const address = {
+      id: Date.now().toString(),
+      country: document.getElementById('addrCountry').value,
+      countryName: LocationService.COUNTRIES[document.getElementById('addrCountry').value]?.name || '',
+      city: document.getElementById('addrCity').value.trim(),
+      area: document.getElementById('addrArea').value.trim(),
+      street: document.getElementById('addrStreet').value.trim(),
+      phone: document.getElementById('addrPhone').value.trim(),
+      name: document.getElementById('addrName').value.trim(),
+      isDefault: document.getElementById('addrDefault').checked
+    };
+
+    if (address.isDefault) {
+      LocationService.setDefaultAddress(address.id);
+    }
+    LocationService.saveAddress(address);
+    
+    renderAdresseDisplay();
+    renderSavedAddresses();
+    modal.classList.add('hidden');
+    form.reset();
+    lucide.createIcons();
+  });
+}
+
+function renderAdresseDisplay() {
+  const addr = LocationService.getDefaultAddress();
+  const display = document.getElementById('adresseDisplay');
+  
+  if (!addr) {
+    display.innerHTML = '<p class="adresse-empty">Aucune adresse enregistrée</p>';
+    return;
+  }
+  
+  display.innerHTML = `
+    <p class="adresse-name">${addr.name || 'Destinataire'}</p>
+    <p>${addr.street ? addr.street + ', ' : ''}${addr.area ? addr.area + ', ' : ''}${addr.city}</p>
+    <p>${addr.countryName}</p>
+    <p class="adresse-phone"><i data-lucide="phone"></i> ${addr.phone}</p>
+  `;
+  lucide.createIcons();
+}
+
+function renderSavedAddresses() {
+  const addresses = LocationService.getSavedAddresses();
+  const container = document.getElementById('savedAddresses');
+  const list = document.getElementById('addressList');
+  
+  if (addresses.length === 0) {
+    container.classList.add('hidden');
+    return;
+  }
+  
+  container.classList.remove('hidden');
+  list.innerHTML = addresses.map(addr => `
+    <div class="address-card ${addr.isDefault ? 'selected' : ''}" data-id="${addr.id}">
+      <div class="address-card-info">
+        <strong>${addr.name || 'Adresse'}</strong>${addr.isDefault ? '<span class="address-card-badge">Par défaut</span>' : ''}<br>
+        ${addr.city}, ${addr.countryName}<br>
+        ${addr.phone}
+      </div>
+    </div>
+  `).join('');
+  
+  list.querySelectorAll('.address-card').forEach(card => {
+    card.addEventListener('click', () => {
+      LocationService.setDefaultAddress(card.dataset.id);
+      renderAdresseDisplay();
+      renderSavedAddresses();
+      document.getElementById('adresseModal').classList.add('hidden');
+    });
+  });
+}
+
 // ── INIT ──
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -124,10 +235,19 @@ async function init() {
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
   renderCart();
+  initAdresse();
 
   document.getElementById('btnCommander').addEventListener('click', async () => {
     const cart = getCart();
     if (cart.length === 0) return;
+
+    // Vérifier adresse
+    const addr = LocationService.getDefaultAddress();
+    if (!addr) {
+      showMsg('Veuillez ajouter une adresse de livraison.', 'error');
+      document.getElementById('adresseModal').classList.remove('hidden');
+      return;
+    }
 
     const btn = document.getElementById('btnCommander');
     btn.disabled = true;
@@ -139,7 +259,12 @@ async function init() {
 
       const { data: commande, error: cmdError } = await supabaseClient
         .from('commandes')
-        .insert([{ user_id: session.user.id, total, statut: 'confirmee' }])
+        .insert([{ 
+          user_id: session.user.id, 
+          total, 
+          statut: 'confirmee',
+          adresse_livraison: addr
+        }])
         .select().single();
 
       if (cmdError) throw cmdError;
@@ -156,7 +281,6 @@ async function init() {
       const { error: lignesError } = await supabaseClient.from('commande_items').insert(lignes);
       if (lignesError) throw lignesError;
 
-      // Décrémenter stocks
       for (const item of cart) {
         const { data: prod, error: stockErr } = await supabaseClient.from('produits').select('stock').eq('id', item.id).single();
         if (stockErr) throw stockErr;

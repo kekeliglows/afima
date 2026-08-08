@@ -6,93 +6,61 @@ const DEVISES = {
   MAD: { code: 'MAD', symbol: 'DH', name: 'Dirham marocain', rate: 10.8 },
   NGN: { code: 'NGN', symbol: '₦', name: 'Naira nigérian', rate: 1650 },
   GHS: { code: 'GHS', symbol: 'GH₵', name: 'Cedi ghanéen', rate: 15.5 },
-  EUR_XOF: { code: 'XOF', symbol: 'FCFA', name: 'FCFA (fixe)', rate: 655.957 }
+  TND: { code: 'TND', symbol: 'DT', name: 'Dinar tunisien', rate: 3.3 },
+  DZD: { code: 'DZD', symbol: 'DA', name: 'Dinar algérien', rate: 135 },
+  EGP: { code: 'EGP', symbol: 'E£', name: 'Livre égyptienne', rate: 31 },
+  KES: { code: 'KES', symbol: 'KSh', name: 'Shilling kényan', rate: 155 },
+  ZAR: { code: 'ZAR', symbol: 'R', name: 'Rand sud-africain', rate: 19.5 }
 };
 
-// Devise par défaut selon le pays (détection automatique)
+const TZ_TO_CURRENCY = {
+  'Africa/Abidjan': 'XOF', 'Africa/Dakar': 'XOF', 'Africa/Bamako': 'XOF',
+  'Africa/Ouagadougou': 'XOF', 'Africa/Niamey': 'XOF', 'Africa/Lome': 'XOF',
+  'Africa/Porto-Novo': 'XOF', 'Africa/Douala': 'XAF', 'Africa/Libreville': 'XAF',
+  'Africa/Kinshasa': 'XAF', 'Africa/Brazzaville': 'XAF', 'Africa/Ndjamena': 'XAF',
+  'Africa/Bangui': 'XAF', 'Africa/Malabo': 'XAF', 'Africa/Lagos': 'NGN',
+  'Africa/Accra': 'GHS', 'Africa/Casablanca': 'MAD', 'Africa/Tunis': 'TND',
+  'Africa/Algiers': 'DZD', 'Africa/Cairo': 'EGP', 'Africa/Nairobi': 'KES',
+  'Africa/Johannesburg': 'ZAR'
+};
+
+const LANG_TO_CURRENCY = {
+  'fr-SN': 'XOF', 'fr-CI': 'XOF', 'fr-ML': 'XOF', 'fr-BF': 'XOF',
+  'fr-NE': 'XOF', 'fr-TG': 'XOF', 'fr-BJ': 'XOF', 'fr-CM': 'XAF',
+  'fr-GA': 'XAF', 'fr-CG': 'XAF', 'fr-CD': 'XAF', 'en-NG': 'NGN', 
+  'en-GH': 'GHS', 'ar-MA': 'MAD', 'ar-TN': 'TND', 'ar-DZ': 'DZD', 'ar-EG': 'EGP'
+};
+
 function getDefaultCurrency() {
-  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const lang = navigator.language || 'fr';
-  
-  // Mapping timezone/pays vers devise
-  const tzMap = {
-    'Africa/Abidjan': 'XOF',
-    'Africa/Dakar': 'XOF',
-    'Africa/Bamako': 'XOF',
-    'Africa/Ouagadougou': 'XOF',
-    'Africa/Niamey': 'XOF',
-    'Africa/Conakry': 'GNF',
-    'Africa/Libreville': 'XAF',
-    'Africa/Douala': 'XAF',
-    'Africa/Kinshasa': 'XAF',
-    'Africa/Brazzaville': 'XAF',
-    'Africa/Lagos': 'NGN',
-    'Africa/Accra': 'GHS',
-    'Africa/Casablanca': 'MAD',
-    'Africa/Tunis': 'TND',
-    'Africa/Algiers': 'DZD'
-  };
-  
-  // Mapping langue/pays
-  const langMap = {
-    'fr-SN': 'XOF', 'fr-CI': 'XOF', 'fr-ML': 'XOF', 'fr-BF': 'XOF',
-    'fr-NE': 'XOF', 'fr-TG': 'XOF', 'fr-BJ': 'XOF',
-    'fr-CM': 'XAF', 'fr-GA': 'XAF', 'fr-CG': 'XAF', 'fr-CD': 'XAF',
-    'en-NG': 'NGN', 'en-GH': 'GHS'
-  };
-  
-  return tzMap[tz] || langMap[lang] || localStorage.getItem('afima_currency') || 'EUR';
+  const tz = Intl.DateTimeFormat?.().resolvedOptions?.()?.timeZone || '';
+  const lang = navigator?.language || '';
+  return TZ_TO_CURRENCY[tz] || LANG_TO_CURRENCY[lang] || 'XOF';
 }
 
-// Récupérer la devise stockée (localStorage ou profil utilisateur depuis sessionStorage)
 function getUserCurrency() {
-  // Priorité : localStorage (choix manuel)
-  const localCurrency = localStorage.getItem('afima_currency');
-  if (localCurrency) return localCurrency;
-  
-  // Sinon : profil utilisateur en session
-  try {
-    const sessionStr = sessionStorage.getItem('afima_user_currency');
-    if (sessionStr) return sessionStr;
-  } catch (e) {}
-  
-  return getDefaultCurrency();
+  return localStorage.getItem('afima_currency') || getDefaultCurrency();
 }
 
-// Stocker la devise
 function setUserCurrency(code) {
-  localStorage.setItem('afima_currency', code);
+  if (DEVISES[code]) localStorage.setItem('afima_currency', code);
 }
 
-// Convertir un prix EUR vers la devise utilisateur
-function convertPrice(priceEUR, toCurrency = null) {
-  const targetCode = toCurrency || getUserCurrency();
-  const devise = DEVISES[targetCode] || DEVISES.EUR;
-  const converted = priceEUR * devise.rate;
-  return devise.rate >= 100 
-    ? Math.round(converted) 
-    : parseFloat(converted.toFixed(2));
+function convertPrice(priceEUR, toCode = null) {
+  const target = DEVISES[toCode || getUserCurrency()] || DEVISES.XOF;
+  const converted = priceEUR * target.rate;
+  return target.rate >= 10 ? Math.round(converted) : parseFloat(converted.toFixed(2));
 }
 
-// Formater un prix avec le symbole de devise
-function formatPrice(priceEUR, currencyCode = null) {
-  const targetCode = currencyCode || getUserCurrency();
-  const devise = DEVISES[targetCode] || DEVISES.EUR;
-  const converted = convertPrice(priceEUR, targetCode);
-  
-  if (devise.rate >= 100) {
-    return `${converted.toLocaleString('fr-FR')} ${devise.symbol}`;
-  }
-  return `${converted.toFixed(2).replace('.', ',')} ${devise.symbol}`;
+function formatPrice(priceEUR, code = null) {
+  const target = DEVISES[code || getUserCurrency()] || DEVISES.XOF;
+  const value = convertPrice(priceEUR, code || getUserCurrency());
+  return target.rate >= 10 
+    ? `${value.toLocaleString('fr-FR')} ${target.symbol}`
+    : `${value.toFixed(2).replace('.', ',')} ${target.symbol}`;
 }
 
-// Obtenir la liste des devises pour un select
 function getDevisesList() {
-  return Object.values(DEVISES).map(d => ({
-    code: d.code,
-    symbol: d.symbol,
-    name: d.name
-  }));
+  return Object.values(DEVISES);
 }
 
-export { DEVISES, getDefaultCurrency, getUserCurrency, setUserCurrency, convertPrice, formatPrice, getDevisesList };
+window.Currency = { DEVISES, getDefaultCurrency, getUserCurrency, setUserCurrency, convertPrice, formatPrice, getDevisesList };

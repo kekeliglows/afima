@@ -20,6 +20,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/utils/currency.js"></script>
+  <script src="../js/utils/geolocation.js"></script>
   <script src="../js/panier.js" defer></script>
 </head>
 
@@ -102,6 +104,17 @@
         </div>
       </div>
 
+      <!-- Adresse de livraison -->
+      <aside class="panier-adresse" id="panierAdresse">
+        <div class="adresse-header">
+          <h3><i data-lucide="map-pin"></i> Livrer à</h3>
+          <button type="button" class="btn-change-addr" id="btnChangeAddr">Modifier</button>
+        </div>
+        <div id="adresseDisplay" class="adresse-content">
+          <p class="adresse-empty">Aucune adresse enregistrée</p>
+        </div>
+      </aside>
+
       <!-- Récapitulatif -->
       <aside class="panier-recap" id="panierRecap">
         <h2>Récapitulatif</h2>
@@ -128,10 +141,74 @@
   </main>
 
   <footer class="footer">
-    <p>&copy; 2026 afima. Tous droits réservés.</p>
-    <a href="conditions-utilisation.html">Conditions d'utilisation</a>
-    <a href="politique-confidentialite.html">Politique de confidentialité</a>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/logo.png" alt="afima">
+        <span>afima</span>
+      </div>
+      <p>&copy; 2026 afima. Tous droits réservés.</p>
+      <div class="footer-links">
+        <a href="a-propos.html">À propos</a>
+        <a href="faq.html">FAQ</a>
+        <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+        <a href="politique-confidentialite.html">Politique de confidentialité</a>
+      </div>
+    </div>
   </footer>
+
+  <!-- Modal adresse -->
+  <div class="modal hidden" id="adresseModal">
+    <div class="modal-content modal-adresse">
+      <button type="button" class="modal-close" id="closeAdresseModal" aria-label="Fermer">
+        <i data-lucide="x"></i>
+      </button>
+      <h3><i data-lucide="map-pin"></i> Adresse de livraison</h3>
+      
+      <!-- Adresses sauvegardées -->
+      <div id="savedAddresses" class="saved-addresses hidden">
+        <p class="saved-label">Mes adresses :</p>
+        <div id="addressList" class="address-list"></div>
+      </div>
+      
+      <form id="adresseForm">
+        <div class="input-group">
+          <label for="addrCountry">Pays *</label>
+          <select id="addrCountry" required>
+            <option value="">Sélectionner</option>
+          </select>
+        </div>
+        <div class="addr-row">
+          <div class="input-group">
+            <label for="addrCity">Ville *</label>
+            <input type="text" id="addrCity" placeholder="Ex: Abidjan" required>
+          </div>
+          <div class="input-group">
+            <label for="addrArea">Quartier</label>
+            <input type="text" id="addrArea" placeholder="Ex: Cocody">
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="addrStreet">Adresse détaillée</label>
+          <input type="text" id="addrStreet" placeholder="Rue, numéro, lieu-dit…">
+        </div>
+        <div class="input-group">
+          <label for="addrPhone">Téléphone *</label>
+          <input type="tel" id="addrPhone" placeholder="+225 00 00 00 00" required>
+        </div>
+        <div class="input-group">
+          <label for="addrName">Nom du destinataire</label>
+          <input type="text" id="addrName" placeholder="Nom sur le colis">
+        </div>
+        <label class="checkbox-default">
+          <input type="checkbox" id="addrDefault">
+          <span>Définir comme adresse par défaut</span>
+        </label>
+        <button type="submit" class="submit-btn">
+          <i data-lucide="check"></i> Enregistrer
+        </button>
+      </form>
+    </div>
+  </div>
 
   <script>lucide.createIcons();</script>
 </body>

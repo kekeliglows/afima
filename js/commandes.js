@@ -91,6 +91,7 @@ async function loadCommandes(userId) {
           <p class="commande-item-titre">${item.titre}</p>
           <p class="commande-item-detail">Qté : ${item.quantite} × ${fmt(item.prix_unitaire)}</p>
         </div>
+        <button class="btn-review" type="button" onclick="window.location.href='produit.html?id=${item.produit_id}&review=1'">Laisser un avis</button>
         <span class="commande-item-prix">${fmt(item.prix_unitaire * item.quantite)}</span>
       </div>
     `).join('');

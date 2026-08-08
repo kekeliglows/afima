@@ -124,6 +124,19 @@
   flex-shrink: 0;
 }
 
+.btn-review {
+  margin-left: auto;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-review:hover { border-color: #111; }
+
 /* ── FOOTER COMMANDE ── */
 .commande-footer {
   display: flex;
