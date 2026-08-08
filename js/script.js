@@ -139,12 +139,14 @@ if (form) {
       }
 
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
-
+      const prixSaisi = Number(document.getElementById('prix').value);
+      const prix = Number.isFinite(prixSaisi) ? prixSaisi : 0;
+      
       const { error: dbError } = await supabaseClient.from('produits').insert([{
         user_id:     currentSession.user.id,
         titre:       document.getElementById('titre').value,
         description: document.getElementById('description').value,
-        prix:        parseFloat(document.getElementById('prix').value),
+        prix,
         stock:       parseInt(document.getElementById('stock').value),
         image_url:   finalImageUrl
       }]);

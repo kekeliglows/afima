@@ -76,8 +76,8 @@ async function loadStats(userId) {
 
   document.getElementById('statProduits').textContent = nbProduits;
   document.getElementById('statVentes').textContent   = ventes;
-  document.getElementById('statRevenu').textContent   = revenu.toFixed(2) + ' €';
-  document.getElementById('statCaMois').textContent   = caMois.toFixed(2) + ' €';
+  document.getElementById('statRevenu').textContent   = Currency.formatPrice(revenu);
+  document.getElementById('statCaMois').textContent   = Currency.formatPrice(caMois);
   document.getElementById('statRupture').textContent  = ruptures;
   document.getElementById('statVues').textContent     = vues;
 }
@@ -114,7 +114,7 @@ function renderTable(query) {
             <span class="td-titre">${p.titre}</span>
           </div>
         </td>
-        <td data-label="Prix" class="td-prix">${parseFloat(p.prix).toFixed(2)} €</td>
+        <td data-label="Prix" class="td-prix">${Currency.formatPrice(p.prix)}</td>
         <td data-label="Stock"><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
         <td data-label="Statut"><span class="stock-badge ${p.stock > 0 ? 'stock-ok' : 'stock-out'}">${p.stock > 0 ? 'En ligne' : 'Hors stock'}</span></td>
         <td data-label="Actions">

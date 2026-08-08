@@ -45,18 +45,19 @@ function setUserCurrency(code) {
   if (DEVISES[code]) localStorage.setItem('afima_currency', code);
 }
 
-function convertPrice(priceEUR, toCode = null) {
-  const target = DEVISES[toCode || getUserCurrency()] || DEVISES.XOF;
-  const converted = priceEUR * target.rate;
-  return target.rate >= 10 ? Math.round(converted) : parseFloat(converted.toFixed(2));
+function convertPrice(price, toCode = null) {
+  const numericValue = Number(price) || 0;
+  return numericValue;
 }
 
-function formatPrice(priceEUR, code = null) {
+function formatPrice(price, code = null) {
   const target = DEVISES[code || getUserCurrency()] || DEVISES.XOF;
-  const value = convertPrice(priceEUR, code || getUserCurrency());
-  return target.rate >= 10 
-    ? `${value.toLocaleString('fr-FR')} ${target.symbol}`
-    : `${value.toFixed(2).replace('.', ',')} ${target.symbol}`;
+  const value = Number(price) || 0;
+  const formattedValue = target.rate >= 10
+    ? value.toLocaleString('fr-FR')
+    : value.toFixed(2).replace('.', ',');
+
+  return `${formattedValue} ${target.symbol}`.trim();
 }
 
 function getDevisesList() {

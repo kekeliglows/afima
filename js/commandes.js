@@ -21,7 +21,7 @@ document.addEventListener('click', e => {
   }
 });
 
-function fmt(n) { return parseFloat(n).toFixed(2).replace('.', ',') + ' €'; }
+function fmt(n) { return Currency.formatPrice(n); }
 
 const STATUTS = {
   confirmee: { label: 'Confirmée',   icon: 'check-circle', css: 'statut-confirmee' },
