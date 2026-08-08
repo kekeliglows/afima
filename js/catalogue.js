@@ -89,14 +89,16 @@ function renderProduits() {
     return `
       <a href="produit.html?id=${p.id}" class="produit-card" aria-label="Voir ${p.titre}">
         <div class="card-img-wrapper">
+          <div class="img-skeleton"></div>
           <img src="${p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image'}"
-               alt="${p.titre}" loading="lazy" width="400" height="200">
+               alt="${p.titre}" loading="lazy" width="400" height="200"
+               onload="this.previousElementSibling.remove()">
         </div>
         <div class="card-body">
           <p class="card-titre">${p.titre}</p>
           <p class="card-description">${p.description || ''}</p>
           <div class="card-footer">
-            <span class="card-prix">${parseFloat(p.prix).toFixed(2)} €</span>
+            <span class="card-prix">${typeof formatPrice === 'function' ? formatPrice(p.prix) : parseFloat(p.prix).toFixed(2) + ' €'}</span>
             ${stockBadge}
           </div>
         </div>

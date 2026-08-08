@@ -31,6 +31,7 @@
   <meta name="twitter:image" content="https://afima.app/og-image.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/utils/greeting.js"></script>
   <script src="../js/profil.js" defer></script>
 </head>
 
@@ -95,6 +96,13 @@
         </div>
       </div>
 
+      <div id="roleSection" class="profil-role-section hidden">
+        <span class="profil-role-badge" id="profilRoleBadge">Acheteur</span>
+        <button type="button" id="btnDevenirVendeur" class="btn btn-outline" style="width:100%;justify-content:center;">
+          <i data-lucide="store"></i> Devenir vendeur
+        </button>
+      </div>
+
       <a href="dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
         <i data-lucide="layout-dashboard"></i> Mon Dashboard
       </a>
@@ -132,6 +140,20 @@
             </div>
           </div>
           <div class="input-group">
+            <label for="profilCurrency">Devise préférée</label>
+            <div class="input-wrap">
+              <i data-lucide="coins" class="input-icon"></i>
+              <select id="profilCurrency">
+                <option value="EUR">€ Euro</option>
+                <option value="XOF">FCFA Franc CFA (Ouest)</option>
+                <option value="XAF">FCFA Franc CFA (Central)</option>
+                <option value="MAD">DH Dirham marocain</option>
+                <option value="NGN">₦ Naira nigérian</option>
+                <option value="GHS">GH₵ Cedi ghanéen</option>
+              </select>
+            </div>
+          </div>
+          <div class="input-group">
             <label for="profilBio">Bio / Description</label>
             <textarea id="profilBio" placeholder="Parlez de vous ou de votre activité..." rows="4"></textarea>
           </div>
@@ -140,6 +162,44 @@
             <span>Enregistrer les modifications</span>
           </button>
         </form>
+
+        <!-- Modal devenir vendeur -->
+        <div id="vendeurModal" class="modal hidden">
+          <div class="modal-content">
+            <button type="button" id="closeVendeurModal" class="modal-close" aria-label="Fermer">
+              <i data-lucide="x"></i>
+            </button>
+            <h3><i data-lucide="store"></i> Devenir vendeur</h3>
+            <p>Complétez vos informations pour commencer à vendre sur afima.</p>
+            <form id="vendeurForm">
+              <div class="input-group">
+                <label for="vendeurNom">Nom complet *</label>
+                <div class="input-wrap">
+                  <i data-lucide="user" class="input-icon"></i>
+                  <input type="text" id="vendeurNom" placeholder="Votre nom" required>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="vendeurTel">Téléphone *</label>
+                <div class="input-wrap">
+                  <i data-lucide="phone" class="input-icon"></i>
+                  <input type="tel" id="vendeurTel" placeholder="+225 00 00 00 00" required>
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="vendeurVille">Ville</label>
+                <div class="input-wrap">
+                  <i data-lucide="map-pin" class="input-icon"></i>
+                  <input type="text" id="vendeurVille" placeholder="Ex : Abidjan">
+                </div>
+              </div>
+              <button type="submit" class="submit-btn">
+                <i data-lucide="check"></i>
+                <span>Confirmer</span>
+              </button>
+            </form>
+          </div>
+        </div>
 
         <div class="profil-danger-zone">
           <h3><i data-lucide="alert-triangle"></i> Zone de danger</h3>

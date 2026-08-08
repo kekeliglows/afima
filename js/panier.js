@@ -158,8 +158,10 @@ async function init() {
 
       // Décrémenter stocks
       for (const item of cart) {
-        const { data: prod } = await supabaseClient.from('produits').select('stock').eq('id', item.id).single();
-        await supabaseClient.from('produits').update({ stock: Math.max(0, prod.stock - item.qty) }).eq('id', item.id);
+        const { data: prod, error: stockErr } = await supabaseClient.from('produits').select('stock').eq('id', item.id).single();
+        if (stockErr) throw stockErr;
+        const { error: updateErr } = await supabaseClient.from('produits').update({ stock: Math.max(0, prod.stock - item.qty) }).eq('id', item.id);
+        if (updateErr) throw updateErr;
       }
 
       localStorage.removeItem('afima_cart');

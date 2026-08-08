@@ -83,6 +83,18 @@ document.addEventListener('DOMContentLoaded', () => {
     pwLabel.style.color  = lvl.color;
   });
 
+  // ── SÉLECTEUR DE RÔLE (ACHETEUR/VENDEUR) ──
+  const vendeurFields = document.getElementById('vendeurFields');
+  const roleInputs = document.querySelectorAll('input[name="userRole"]');
+
+  roleInputs.forEach(input => {
+    input.addEventListener('change', () => {
+      const isVendeur = document.querySelector('input[name="userRole"]:checked').value === 'vendeur';
+      vendeurFields.classList.toggle('hidden', !isVendeur);
+      lucide.createIcons();
+    });
+  });
+
   // ── MESSAGES ──
   const messageBox = document.getElementById('auth-message');
 
@@ -125,26 +137,82 @@ document.addEventListener('DOMContentLoaded', () => {
   signupForm.addEventListener('submit', async e => {
     e.preventDefault();
     hideMessage();
+
+    const role = document.querySelector('input[name="userRole"]:checked').value;
+    const isVendeur = role === 'vendeur';
+
+    // Validation des champs vendeur
+    if (isVendeur) {
+      const nom = document.getElementById('signupNom').value.trim();
+      const tel = document.getElementById('signupTel').value.trim();
+      if (!nom) { showMessage('Veuillez entrer votre nom.'); return; }
+      if (!tel) { showMessage('Veuillez entrer votre téléphone.'); return; }
+    }
+
     const btn = document.getElementById('btnSignup');
     btn.disabled = true;
     btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Création...</span>';
     lucide.createIcons();
 
-    const { error } = await client.auth.signUp({
+    const { data, error } = await client.auth.signUp({
       email:    document.getElementById('signupEmail').value,
       password: document.getElementById('signupPassword').value,
     });
 
     if (error) {
       showMessage(error.message);
-    } else {
-      showMessage('Compte créé ! Vérifiez votre boîte mail.', false);
-      signupForm.reset();
-      pwBar.style.width = '0%';
-      pwLabel.textContent = '';
+      btn.disabled = false;
+      btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
+      lucide.createIcons();
+      return;
     }
+
+    // Création du profil avec le rôle et la devise
+    if (data.user) {
+      const profileData = {
+        id: data.user.id,
+        role: role,
+        full_name: isVendeur ? document.getElementById('signupNom').value.trim() : null,
+        phone: isVendeur ? document.getElementById('signupTel').value.trim() : null,
+        city: isVendeur ? document.getElementById('signupVille').value.trim() : null,
+        currency: document.getElementById('signupCurrency').value
+      };
+
+      await client.from('profiles').upsert(profileData, { onConflict: 'id' });
+    }
+
+    showMessage('Compte créé ! Vérifiez votre boîte mail.', false);
+    signupForm.reset();
+    pwBar.style.width = '0%';
+    pwLabel.textContent = '';
+    vendeurFields.classList.add('hidden');
+    document.querySelector('input[name="userRole"][value="acheteur"]').checked = true;
+
     btn.disabled = false;
     btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
     lucide.createIcons();
   });
+  // ══ BOUTON SE CONNECTER AVEC GOOGLE ══
+  const btnGoogle = document.getElementById('btn-google');
+
+  if (btnGoogle) {
+    btnGoogle.addEventListener('click', async () => {
+      try {
+        btnGoogle.disabled = true;
+
+        const { error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: window.location.origin + '/html/profil.html'
+          }
+        });
+
+        if (error) throw error;
+      } catch (err) {
+        console.error('Erreur connexion Google :', err.message);
+        showMessage('Erreur Google : ' + err.message);
+        btnGoogle.disabled = false;
+      }
+    });
+  }
 });

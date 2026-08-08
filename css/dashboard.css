@@ -17,6 +17,7 @@
 }
 .dash-header h1 { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px; }
 .dash-header p  { font-size: 0.9rem; color: #6b7280; margin-top: 4px; }
+.dash-date { font-size: 0.8rem; color: #9ca3af; margin-top: 2px; text-transform: capitalize; }
 
 /* ── STATS ── */
 .dash-stats {

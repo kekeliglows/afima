@@ -138,7 +138,10 @@ if (form) {
         finalImageUrl = urlData.publicUrl;
       }
 
+      const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
+
       const { error: dbError } = await supabaseClient.from('produits').insert([{
+        user_id:     currentSession.user.id,
         titre:       document.getElementById('titre').value,
         description: document.getElementById('description').value,
         prix:        parseFloat(document.getElementById('prix').value),

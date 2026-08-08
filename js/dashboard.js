@@ -17,9 +17,14 @@ async function init() {
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  // Profil nom
-  const { data: profile } = await sb.from('profiles').select('nom').eq('id', userId).single();
-  document.getElementById('dashWelcome').textContent = `Bonjour, ${profile?.nom || session.user.email} !`;
+  // Profil nom et salutation dynamique
+  const { data: profile } = await sb.from('profiles').select('full_name').eq('id', userId).single();
+  const displayName = profile?.full_name || session.user.email.split('@')[0];
+  startGreetingRefresh('dashWelcome', displayName);
+  
+  // Date du jour
+  const dateEl = document.getElementById('dashDate');
+  if (dateEl) dateEl.textContent = getFormattedDate();
 
   await loadStats(userId);
   await loadProduits(userId);

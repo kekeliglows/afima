@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="../css/dashboard.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/utils/greeting.js"></script>
   <script src="../js/dashboard.js" defer></script>
 </head>
 <body>
@@ -47,7 +48,8 @@
     <div class="dash-header">
       <div>
         <h1>Mon Dashboard</h1>
-        <p id="dashWelcome">Bonjour !</p>
+        <p id="dashWelcome">—</p>
+        <p id="dashDate" class="dash-date"></p>
       </div>
       <a href="ajouter-produit.html" class="btn btn-primary">
         <i data-lucide="plus"></i> Nouveau produit

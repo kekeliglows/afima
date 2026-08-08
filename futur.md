@@ -34,4 +34,3 @@ Cas d'erreurs et Sécurité : Gestion des solde insuffisants, verrouillage de li
 
 
 
-"Maintenant, nous avons choisi [Nom du système de paiement, ex: FedaPay]. Écris la fonction processPayout pour connecter notre table payout_requests à leur API."

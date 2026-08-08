@@ -94,7 +94,8 @@
       <div class="produit-layout">
         <div class="produit-image-col">
           <div class="produit-img-wrapper">
-            <img id="produitImg" src="" alt="" loading="eager">
+            <div class="img-loader" id="imgLoader"></div>
+            <img id="produitImg" src="" alt="" loading="eager" onload="document.getElementById('imgLoader')?.remove()">
           </div>
         </div>
 

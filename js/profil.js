@@ -30,12 +30,13 @@ async function initProfile() {
 
   await loadProfile(session.user);
   await loadProductCount(currentUserId);
+  initVendeurModal();
 }
 
 async function loadProfile(sessionUser) {
   const { data: profile, error } = await sb
     .from('profiles')
-    .select('full_name, phone, city, bio, avatar_url, updated_at')
+    .select('full_name, phone, city, bio, avatar_url, updated_at, role, currency')
     .eq('id', currentUserId)
     .maybeSingle();
 
@@ -51,7 +52,9 @@ async function loadProfile(sessionUser) {
       phone: '', 
       city: '', 
       avatar_url: null, 
-      updated_at: sessionUser.created_at 
+      updated_at: sessionUser.created_at,
+      role: 'acheteur',
+      currency: 'EUR'
   };
 
   // Création du profil en base s'il n'existe pas encore
@@ -62,7 +65,8 @@ async function loadProfile(sessionUser) {
       phone: null,
       city: null,
       bio: null,
-      avatar_url: null
+      avatar_url: null,
+      currency: 'EUR'
     }, { onConflict: 'id' });
   }
 
@@ -76,6 +80,7 @@ async function loadProfile(sessionUser) {
   document.getElementById('profilTel').value = currentProfile.phone || '';
   document.getElementById('profilVille').value = currentProfile.city || '';
   document.getElementById('profilBio').value = currentProfile.bio || '';
+  document.getElementById('profilCurrency').value = currentProfile.currency || 'EUR';
   
   const memberDate = currentProfile.updated_at || sessionUser.created_at;
   document.getElementById('profilMembre').textContent = memberDate
@@ -83,6 +88,25 @@ async function loadProfile(sessionUser) {
     : 'Membre depuis —';
 
   renderAvatar(currentProfile.avatar_url);
+
+  // Afficher le rôle et le bouton "Devenir vendeur"
+  updateRoleUI(currentProfile.role);
+}
+
+function updateRoleUI(role) {
+  const roleSection = document.getElementById('roleSection');
+  const roleBadge = document.getElementById('profilRoleBadge');
+  const btnDevenirVendeur = document.getElementById('btnDevenirVendeur');
+
+  roleSection.classList.remove('hidden');
+  roleBadge.textContent = role === 'vendeur' ? 'Vendeur' : 'Acheteur';
+  roleBadge.className = 'profil-role-badge ' + (role === 'vendeur' ? 'vendeur' : 'acheteur');
+
+  if (role === 'vendeur') {
+    btnDevenirVendeur.classList.add('hidden');
+  } else {
+    btnDevenirVendeur.classList.remove('hidden');
+  }
 }
 
 async function loadProductCount(userId) {
@@ -132,6 +156,7 @@ async function saveProfile(event) {
   const phone = document.getElementById('profilTel').value.trim();
   const city = document.getElementById('profilVille').value.trim();
   const bio = document.getElementById('profilBio').value.trim();
+  const currency = document.getElementById('profilCurrency').value;
   const file = document.getElementById('avatarFile').files?.[0];
   const btn = document.getElementById('profilSubmit');
 
@@ -146,6 +171,7 @@ async function saveProfile(event) {
       phone: phone || null,
       city: city || null,
       bio: bio || null,
+      currency: currency,
       updated_at: new Date().toISOString()
     };
 
@@ -180,6 +206,9 @@ async function saveProfile(event) {
     document.getElementById('profilNomDisplay').textContent = currentProfile.full_name;
     document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
     renderAvatar(currentProfile.avatar_url);
+    
+    // Sauvegarder la devise dans localStorage pour les autres pages
+    localStorage.setItem('afima_currency', updates.currency);
 
     showMsg('Profil mis à jour avec succès.', 'success');
   } catch (err) {
@@ -229,5 +258,58 @@ function initHamburger() {
       toggle.querySelector('.icon-close')?.classList.add('hidden');
       toggle.setAttribute('aria-expanded', 'false');
     }
+  });
+}
+
+// ── MODAL DEVENIR VENDEUR ──
+function initVendeurModal() {
+  const modal = document.getElementById('vendeurModal');
+  const btnOpen = document.getElementById('btnDevenirVendeur');
+  const btnClose = document.getElementById('closeVendeurModal');
+  const form = document.getElementById('vendeurForm');
+
+  btnOpen?.addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    // Pré-remplir avec les données existantes
+    document.getElementById('vendeurNom').value = document.getElementById('profilNom').value || '';
+    document.getElementById('vendeurTel').value = document.getElementById('profilTel').value || '';
+    document.getElementById('vendeurVille').value = document.getElementById('profilVille').value || '';
+  });
+
+  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
+  modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+
+  form?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = form.querySelector('button[type="submit"]');
+    btn.disabled = true;
+
+    const updates = {
+      id: currentUserId,
+      role: 'vendeur',
+      full_name: document.getElementById('vendeurNom').value.trim(),
+      phone: document.getElementById('vendeurTel').value.trim(),
+      city: document.getElementById('vendeurVille').value.trim() || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await sb.from('profiles').upsert(updates, { onConflict: 'id' });
+
+    if (error) {
+      showMsg('Erreur : ' + error.message, 'error');
+      btn.disabled = false;
+      return;
+    }
+
+    currentProfile = { ...currentProfile, ...updates };
+    document.getElementById('profilNom').value = updates.full_name;
+    document.getElementById('profilTel').value = updates.phone || '';
+    document.getElementById('profilVille').value = updates.city || '';
+    document.getElementById('profilNomDisplay').textContent = updates.full_name;
+
+    modal.classList.add('hidden');
+    updateRoleUI('vendeur');
+    showMsg('Félicitations ! Vous êtes maintenant vendeur.', 'success');
+    lucide.createIcons();
   });
 }
