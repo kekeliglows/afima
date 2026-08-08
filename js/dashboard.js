@@ -5,6 +5,14 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 let allProduits = [];
 let deleteTargetId = null;
 
+function formatPriceValue(value) {
+  if (typeof window.Currency?.formatPrice === 'function') {
+    return window.Currency.formatPrice(value);
+  }
+  const numericValue = Number(value) || 0;
+  return `${numericValue.toLocaleString('fr-FR')} FCFA`;
+}
+
 // ── HAMBURGER ──
 initHamburger();
 
@@ -76,8 +84,8 @@ async function loadStats(userId) {
 
   document.getElementById('statProduits').textContent = nbProduits;
   document.getElementById('statVentes').textContent   = ventes;
-  document.getElementById('statRevenu').textContent   = Currency.formatPrice(revenu);
-  document.getElementById('statCaMois').textContent   = Currency.formatPrice(caMois);
+  document.getElementById('statRevenu').textContent   = formatPriceValue(revenu);
+  document.getElementById('statCaMois').textContent   = formatPriceValue(caMois);
   document.getElementById('statRupture').textContent  = ruptures;
   document.getElementById('statVues').textContent     = vues;
 }
@@ -114,7 +122,7 @@ function renderTable(query) {
             <span class="td-titre">${p.titre}</span>
           </div>
         </td>
-        <td data-label="Prix" class="td-prix">${Currency.formatPrice(p.prix)}</td>
+        <td data-label="Prix" class="td-prix">${formatPriceValue(p.prix)}</td>
         <td data-label="Stock"><span class="stock-badge ${stockClass}">${stockLabel}</span></td>
         <td data-label="Statut"><span class="stock-badge ${p.stock > 0 ? 'stock-ok' : 'stock-out'}">${p.stock > 0 ? 'En ligne' : 'Hors stock'}</span></td>
         <td data-label="Actions">
