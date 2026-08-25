@@ -13,24 +13,30 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initProfile() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { 
-      window.location.href = 'login.html'; 
-      return; 
+  const profileLoader = document.getElementById('profileLoader');
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    currentUserId = session.user.id;
+
+    document.getElementById('btnLogout')?.addEventListener('click', logout);
+    document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
+    document.getElementById('btnLogoutDanger')?.addEventListener('click', logout);
+    document.getElementById('profilForm')?.addEventListener('submit', saveProfile);
+    document.getElementById('avatarFile')?.addEventListener('change', previewAvatar);
+
+    await loadProfile(session.user);
+    await loadProductCount(currentUserId);
+    initVendeurModal();
+  } finally {
+    profileLoader?.classList.add('hidden');
+    document.querySelector('.profil-layout')?.classList.remove('is-loading');
   }
-  
-  currentUserId = session.user.id;
-
-  // Écouteurs d'événements
-  document.getElementById('btnLogout')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutDanger')?.addEventListener('click', logout);
-  document.getElementById('profilForm')?.addEventListener('submit', saveProfile);
-  document.getElementById('avatarFile')?.addEventListener('change', previewAvatar);
-
-  await loadProfile(session.user);
-  await loadProductCount(currentUserId);
-  initVendeurModal();
 }
 
 async function loadProfile(sessionUser) {
@@ -71,7 +77,12 @@ async function loadProfile(sessionUser) {
   }
 
   // Mise à jour de l'affichage HTML
-  document.getElementById('profilNomDisplay').textContent = currentProfile.full_name || sessionUser.email;
+  const displayName = currentProfile.full_name || sessionUser.email.split('@')[0];
+  document.getElementById('profilNomDisplay').textContent = displayName;
+  
+  // Afficher la salutation avec le nom
+  startGreetingRefresh('profilNomDisplay', displayName);
+  
   document.getElementById('profilEmailDisplay').textContent = sessionUser.email;
   document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
   

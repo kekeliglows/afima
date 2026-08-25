@@ -2,6 +2,22 @@ const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Clé publique Kkiapay (PAS la clé secrète — celle-ci ne doit jamais
+// apparaître côté client). Passer à false en production.
+const KKIAPAY_PUBLIC_KEY = 'REMPLACE_PAR_TA_CLE_PUBLIQUE_KKIAPAY';
+const KKIAPAY_SANDBOX = true;
+
+// ── ÉCHAPPEMENT HTML (anti-XSS) ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
@@ -21,10 +37,10 @@ document.addEventListener('click', e => {
   }
 });
 
-// ── PANIER ──
+// ── PANIER (localStorage reste OK : c'est juste une pré-sélection,
+// le prix/stock réels sont revérifiés côté serveur dans le RPC) ──
 function getCart() { return JSON.parse(localStorage.getItem('afima_cart') || '[]'); }
 function saveCart(cart) { localStorage.setItem('afima_cart', JSON.stringify(cart)); }
-
 function fmt(priceEUR) { return Currency.formatPrice(priceEUR); }
 
 function updateBadge(cart) {
@@ -64,10 +80,10 @@ function renderCart() {
   container.innerHTML = cart.map((item, idx) => `
     <div class="panier-item" data-idx="${idx}">
       <img class="panier-item-img"
-           src="${item.image_url || 'https://placehold.co/80x80/f3f4f6/9ca3af?text=?'}"
-           alt="${item.titre}" loading="lazy">
+           src="${escapeHtml(item.image_url || 'https://placehold.co/80x80/f3f4f6/9ca3af?text=?')}"
+           alt="${escapeHtml(item.titre)}" loading="lazy">
       <div class="panier-item-info">
-        <a href="produit.html?id=${item.id}" class="panier-item-titre">${item.titre}</a>
+        <a href="produit.html?id=${encodeURIComponent(item.id)}" class="panier-item-titre">${escapeHtml(item.titre)}</a>
         <p class="panier-item-prix-unit">${fmt(item.prix)} / unité</p>
       </div>
       <div class="panier-item-controls">
@@ -121,7 +137,6 @@ async function initAdresse() {
   const form = document.getElementById('adresseForm');
   const countrySelect = document.getElementById('addrCountry');
 
-  // Peupler les pays
   Object.entries(LocationService.COUNTRIES).forEach(([code, data]) => {
     const opt = document.createElement('option');
     opt.value = code;
@@ -129,7 +144,6 @@ async function initAdresse() {
     countrySelect.appendChild(opt);
   });
 
-  // Détection automatique du pays
   const detectedCountry = await LocationService.detectCountry();
   if (detectedCountry && LocationService.COUNTRIES[detectedCountry]) {
     countrySelect.value = detectedCountry;
@@ -137,18 +151,13 @@ async function initAdresse() {
     phoneInput.placeholder = LocationService.COUNTRIES[detectedCountry].dial + ' 00 00 00 00';
   }
 
-  // Afficher l'adresse par défaut
   renderAdresseDisplay();
-
-  // Charger les adresses sauvegardées
   renderSavedAddresses();
 
-  // Ouvrir modal
   btnOpen?.addEventListener('click', () => modal.classList.remove('hidden'));
   btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
   modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
 
-  // Soumission formulaire
   form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const address = {
@@ -163,11 +172,9 @@ async function initAdresse() {
       isDefault: document.getElementById('addrDefault').checked
     };
 
-    if (address.isDefault) {
-      LocationService.setDefaultAddress(address.id);
-    }
+    if (address.isDefault) LocationService.setDefaultAddress(address.id);
     LocationService.saveAddress(address);
-    
+
     renderAdresseDisplay();
     renderSavedAddresses();
     modal.classList.add('hidden');
@@ -179,17 +186,17 @@ async function initAdresse() {
 function renderAdresseDisplay() {
   const addr = LocationService.getDefaultAddress();
   const display = document.getElementById('adresseDisplay');
-  
+
   if (!addr) {
     display.innerHTML = '<p class="adresse-empty">Aucune adresse enregistrée</p>';
     return;
   }
-  
+
   display.innerHTML = `
-    <p class="adresse-name">${addr.name || 'Destinataire'}</p>
-    <p>${addr.street ? addr.street + ', ' : ''}${addr.area ? addr.area + ', ' : ''}${addr.city}</p>
-    <p>${addr.countryName}</p>
-    <p class="adresse-phone"><i data-lucide="phone"></i> ${addr.phone}</p>
+    <p class="adresse-name">${escapeHtml(addr.name || 'Destinataire')}</p>
+    <p>${escapeHtml(addr.street ? addr.street + ', ' : '')}${escapeHtml(addr.area ? addr.area + ', ' : '')}${escapeHtml(addr.city)}</p>
+    <p>${escapeHtml(addr.countryName)}</p>
+    <p class="adresse-phone"><i data-lucide="phone"></i> ${escapeHtml(addr.phone)}</p>
   `;
   lucide.createIcons();
 }
@@ -198,29 +205,57 @@ function renderSavedAddresses() {
   const addresses = LocationService.getSavedAddresses();
   const container = document.getElementById('savedAddresses');
   const list = document.getElementById('addressList');
-  
+
   if (addresses.length === 0) {
     container.classList.add('hidden');
     return;
   }
-  
+
   container.classList.remove('hidden');
   list.innerHTML = addresses.map(addr => `
-    <div class="address-card ${addr.isDefault ? 'selected' : ''}" data-id="${addr.id}">
+    <div class="address-card ${addr.isDefault ? 'selected' : ''}" data-id="${escapeHtml(addr.id)}">
       <div class="address-card-info">
-        <strong>${addr.name || 'Adresse'}</strong>${addr.isDefault ? '<span class="address-card-badge">Par défaut</span>' : ''}<br>
-        ${addr.city}, ${addr.countryName}<br>
-        ${addr.phone}
+        <strong>${escapeHtml(addr.name || 'Adresse')}</strong>${addr.isDefault ? '<span class="address-card-badge">Par défaut</span>' : ''}<br>
+        ${escapeHtml(addr.city)}, ${escapeHtml(addr.countryName)}<br>
+        ${escapeHtml(addr.phone)}
       </div>
     </div>
   `).join('');
-  
+
   list.querySelectorAll('.address-card').forEach(card => {
     card.addEventListener('click', () => {
       LocationService.setDefaultAddress(card.dataset.id);
       renderAdresseDisplay();
       renderSavedAddresses();
       document.getElementById('adresseModal').classList.add('hidden');
+    });
+  });
+}
+
+// ── PAIEMENT KKIAPAY ──
+function payerAvecKkiapay(commandeId, total, session) {
+  return new Promise((resolve, reject) => {
+    const successHandler = (response) => {
+      window.removeKkiapayListener('success', successHandler);
+      window.removeKkiapayListener('failed', failedHandler);
+      resolve(response); // { transactionId: ... }
+    };
+    const failedHandler = () => {
+      window.removeKkiapayListener('success', successHandler);
+      window.removeKkiapayListener('failed', failedHandler);
+      reject(new Error('PAIEMENT_ECHOUE'));
+    };
+
+    window.addKkiapayListener('success', successHandler);
+    window.addKkiapayListener('failed', failedHandler);
+
+    window.openKkiapayWidget({
+      amount: Math.round(total), // Kkiapay attend un montant en entier (XOF)
+      key: KKIAPAY_PUBLIC_KEY,
+      sandbox: KKIAPAY_SANDBOX,
+      email: session.user.email,
+      data: JSON.stringify({ commande_id: commandeId }),
+      position: 'center'
     });
   });
 }
@@ -241,7 +276,6 @@ async function init() {
     const cart = getCart();
     if (cart.length === 0) return;
 
-    // Vérifier adresse
     const addr = LocationService.getDefaultAddress();
     if (!addr) {
       showMsg('Veuillez ajouter une adresse de livraison.', 'error');
@@ -251,49 +285,40 @@ async function init() {
 
     const btn = document.getElementById('btnCommander');
     btn.disabled = true;
-    btn.innerHTML = '<i data-lucide="loader"></i> Traitement...';
+    btn.innerHTML = '<i data-lucide="loader"></i> Création de la commande...';
     lucide.createIcons();
 
+    let commandeId = null;
+
     try {
-      const total = cart.reduce((s, i) => s + i.prix * i.qty, 0);
+      // 1) Réservation atomique du stock + création de la commande
+      //    (le prix vient de la BDD, pas du panier client)
+      const cartPayload = cart.map(i => ({ id: i.id, qty: i.qty }));
+      const { data: result, error: rpcError } = await supabaseClient
+        .rpc('create_pending_order', { p_cart: cartPayload, p_address: addr });
 
-      const { data: commande, error: cmdError } = await supabaseClient
-        .from('commandes')
-        .insert([{ 
-          user_id: session.user.id, 
-          total, 
-          statut: 'confirmee',
-          adresse_livraison: addr
-        }])
-        .select().single();
+      if (rpcError) throw rpcError;
+      commandeId = result.commande_id;
+      const total = result.total;
 
-      if (cmdError) throw cmdError;
+      // 2) Ouverture du paiement Kkiapay
+      btn.innerHTML = '<i data-lucide="loader"></i> Ouverture du paiement...';
+      lucide.createIcons();
+      await payerAvecKkiapay(commandeId, total, session);
 
-      const lignes = cart.map(i => ({
-        commande_id:   commande.id,
-        produit_id:    i.id,
-        titre:         i.titre,
-        prix_unitaire: i.prix,
-        quantite:      i.qty,
-        image_url:     i.image_url
-      }));
-
-      const { error: lignesError } = await supabaseClient.from('commande_items').insert(lignes);
-      if (lignesError) throw lignesError;
-
-      for (const item of cart) {
-        const { data: prod, error: stockErr } = await supabaseClient.from('produits').select('stock').eq('id', item.id).single();
-        if (stockErr) throw stockErr;
-        const { error: updateErr } = await supabaseClient.from('produits').update({ stock: Math.max(0, prod.stock - item.qty) }).eq('id', item.id);
-        if (updateErr) throw updateErr;
-      }
-
+      // 3) Le widget confirme le succès, mais la confirmation RÉELLE
+      //    et la libération de l'escrow se font côté serveur via le
+      //    webhook Kkiapay -> Edge Function -> RPC mark_order_paid()
       localStorage.removeItem('afima_cart');
-      showMsg('Commande confirmée ! Redirection...', 'success');
+      showMsg('Paiement reçu ! Confirmation en cours...', 'success');
       setTimeout(() => window.location.href = 'commandes.html', 1200);
 
     } catch (err) {
-      showMsg('Erreur : ' + err.message, 'error');
+      // paiement échoué / annulé / erreur réseau → on libère le stock réservé
+      if (commandeId) {
+        await supabaseClient.rpc('cancel_pending_order', { p_commande_id: commandeId });
+      }
+      showMsg('Erreur : ' + (err.message || 'le paiement a échoué.'), 'error');
       btn.disabled = false;
       btn.innerHTML = '<i data-lucide="check-circle"></i> Confirmer la commande';
       lucide.createIcons();

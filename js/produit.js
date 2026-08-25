@@ -2,6 +2,17 @@ const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// ── ÉCHAPPEMENT HTML (anti-XSS) ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
@@ -55,20 +66,32 @@ async function init() {
 
   if (error || !produit) { showError(); return; }
 
-  try {
-    await supabaseClient.from('produits').update({ views: (produit.views || 0) + 1 }).eq('id', produit.id);
-  } catch (err) {
-    console.warn('Impossible de mettre à jour les vues du produit :', err.message);
-  }
+  // Incrémentation atomique des vues (n'importe jamais le blocage de l'affichage)
+  supabaseClient.rpc('increment_product_views', { p_produit_id: produit.id })
+    .then(({ error: viewErr }) => {
+      if (viewErr) console.warn('Impossible de mettre à jour les vues du produit :', viewErr.message);
+    });
 
   renderProduit(produit, session.user.id);
 }
 
+function bindProductCurrencySelector() {
+  const selector = document.getElementById('currencySelect');
+  if (!selector) return;
+  selector.value = Currency.getUserCurrency();
+  selector.addEventListener('change', (event) => {
+    Currency.setUserCurrency(event.target.value);
+    document.getElementById('produitPrix').textContent = Currency.formatPrice(currentProduit.prix, Currency.getProductCurrencyCode(currentProduit), Currency.getUserCurrency());
+  });
+}
+
+let currentProduit = null;
+
 function renderProduit(p, userId) {
+  currentProduit = p;
   document.getElementById('produitSkeleton').classList.add('hidden');
   document.getElementById('produitContent').classList.remove('hidden');
 
-  // SEO dynamique
   document.title = `${p.titre} — afima`;
 
   document.getElementById('produitImg').src = p.image_url || 'https://placehold.co/600x600/f3f4f6/9ca3af?text=No+Image';
@@ -76,17 +99,20 @@ function renderProduit(p, userId) {
   document.getElementById('produitTitre').textContent = p.titre;
   const wishlistButton = document.getElementById('wishlistButton');
   if (wishlistButton) {
-    const stored = JSON.parse(localStorage.getItem('afima_wishlist') || '[]');
-    wishlistButton.classList.toggle('active', stored.includes(String(p.id)));
-    wishlistButton.addEventListener('click', async () => {
-      const current = JSON.parse(localStorage.getItem('afima_wishlist') || '[]');
-      const ids = current.includes(String(p.id)) ? current.filter(id => id !== String(p.id)) : [...current, String(p.id)];
-      localStorage.setItem('afima_wishlist', JSON.stringify(ids));
+    const syncFavoriteState = async () => {
+      const ids = await Wishlist.getWishlistIds({ supabaseClient, userId });
       wishlistButton.classList.toggle('active', ids.includes(String(p.id)));
-      showMsg(ids.includes(String(p.id)) ? 'Ajouté aux favoris.' : 'Retiré des favoris.', 'success');
+    };
+
+    syncFavoriteState();
+    wishlistButton.addEventListener('click', async () => {
+      const result = await Wishlist.toggleProductWishlist({ supabaseClient, userId, product: p, productId: p.id });
+      wishlistButton.classList.toggle('active', result.isFavorite);
+      showMsg(result.isFavorite ? 'Ajouté aux favoris.' : 'Retiré des favoris.', 'success');
     });
   }
-  document.getElementById('produitPrix').textContent = Currency.formatPrice(p.prix);
+  document.getElementById('produitPrix').textContent = Currency.formatPrice(p.prix, Currency.getProductCurrencyCode(p), Currency.getUserCurrency());
+  bindProductCurrencySelector();
   document.getElementById('produitDescription').textContent = p.description || '';
   document.getElementById('produitDate').textContent = 'Publié le ' + new Date(p.created_at).toLocaleDateString('fr-FR');
 
@@ -102,7 +128,6 @@ function renderProduit(p, userId) {
     document.getElementById('btnPanier').disabled = true;
   }
 
-  // Quantité
   const qtyInput = document.getElementById('qtyInput');
   qtyInput.max = p.stock;
 
@@ -115,56 +140,32 @@ function renderProduit(p, userId) {
 
   // Ajouter au panier
   document.getElementById('btnPanier').addEventListener('click', () => {
-    const qty = parseInt(qtyInput.value);
-    const cart = getCart();
-    const existing = cart.find(i => i.id === p.id);
-    if (existing) {
-      existing.qty = Math.min(existing.qty + qty, p.stock);
-    } else {
-      cart.push({ id: p.id, titre: p.titre, prix: p.prix, image_url: p.image_url, qty, stock: p.stock });
-    }
-    saveCart(cart);
-    updateCartBadge();
+    ajouterAuPanier(p, parseInt(qtyInput.value));
     showMsg('Ajouté au panier !', 'success');
   });
 
-  // Acheter maintenant
-  document.getElementById('btnAcheter').addEventListener('click', async () => {
-    const qty = parseInt(qtyInput.value);
-    const btn = document.getElementById('btnAcheter');
-    btn.disabled = true;
-
-    try {
-      await passerCommande(userId, [{ id: p.id, titre: p.titre, prix: p.prix, image_url: p.image_url, qty }]);
-      showMsg('Commande passée avec succès !', 'success');
-      setTimeout(() => window.location.href = 'commandes.html', 1200);
-    } catch (err) {
-      showMsg('Erreur : ' + err.message, 'error');
-      btn.disabled = false;
-    }
+  // Acheter maintenant : on ajoute au panier puis on va directement au
+  // paiement — panier.html gère déjà l'adresse + l'escrow + Kkiapay,
+  // pas besoin de dupliquer ce flux ici.
+  document.getElementById('btnAcheter').addEventListener('click', () => {
+    ajouterAuPanier(p, parseInt(qtyInput.value));
+    window.location.href = 'panier.html';
   });
 
   initializeReviews(p, userId);
   lucide.createIcons();
 }
 
-function getLocalReviews(productId) {
-  try {
-    const all = JSON.parse(localStorage.getItem('afima_reviews') || '{}');
-    return Array.isArray(all[productId]) ? all[productId] : [];
-  } catch {
-    return [];
+function ajouterAuPanier(p, qty) {
+  const cart = getCart();
+  const existing = cart.find(i => i.id === p.id);
+  if (existing) {
+    existing.qty = Math.min(existing.qty + qty, p.stock);
+  } else {
+    cart.push({ id: p.id, titre: p.titre, prix: p.prix, image_url: p.image_url, qty, stock: p.stock });
   }
-}
-
-function saveLocalReviews(productId, reviews) {
-  try {
-    const all = JSON.parse(localStorage.getItem('afima_reviews') || '{}');
-    all[productId] = reviews;
-    localStorage.setItem('afima_reviews', JSON.stringify(all));
-  } catch {
-    // ignore
-  }
+  saveCart(cart);
+  updateCartBadge();
 }
 
 async function initializeReviews(product, userId) {
@@ -175,25 +176,19 @@ async function initializeReviews(product, userId) {
   let hasPurchased = false;
 
   try {
-    const { data: purchaseData } = await supabaseClient.from('commande_items').select('commande_id, produit_id').eq('produit_id', product.id);
-    const commandIds = (purchaseData || []).map(item => item.commande_id);
-    if (commandIds.length > 0) {
-      const { data: commandes } = await supabaseClient.from('commandes').select('id').eq('user_id', userId);
-      hasPurchased = commandIds.some(id => (commandes || []).some(cmd => cmd.id === id));
-    }
+    const { data, error } = await supabaseClient.rpc('has_purchased_product', { p_produit_id: product.id });
+    if (!error) hasPurchased = !!data;
   } catch (err) {
-    console.warn('Impossible de vérifier l’achat du produit :', err.message);
+    console.warn('Impossible de vérifier l\'achat du produit :', err.message);
   }
 
-  try {
-    const { data, error } = await supabaseClient.from('reviews').select('*').eq('product_id', product.id).order('created_at', { ascending: false });
-    if (!error && Array.isArray(data)) {
-      reviews = data;
-    } else {
-      reviews = getLocalReviews(product.id);
-    }
-  } catch {
-    reviews = getLocalReviews(product.id);
+  const { data: reviewData, error: reviewError } = await supabaseClient
+    .from('reviews').select('*').eq('product_id', product.id).order('created_at', { ascending: false });
+
+  if (!reviewError && Array.isArray(reviewData)) {
+    reviews = reviewData;
+  } else {
+    console.warn('Impossible de charger les avis :', reviewError?.message);
   }
 
   const hasReviewed = reviews.some(r => r.user_id === userId);
@@ -204,7 +199,7 @@ async function initializeReviews(product, userId) {
   container.innerHTML = `
     <div class="reviews-header">
       <h2>Avis clients</h2>
-      <div class="review-summary">${reviews.length > 0 ? `${average} / 5 · ${reviews.length} avis` : 'Aucun avis pour l’instant'}</div>
+      <div class="review-summary">${reviews.length > 0 ? `${average} / 5 · ${reviews.length} avis` : 'Aucun avis pour l\'instant'}</div>
     </div>
     ${hasPurchased && !hasReviewed ? `
       <form class="review-form" id="reviewForm">
@@ -213,7 +208,7 @@ async function initializeReviews(product, userId) {
           ${[1,2,3,4,5].map(v => `<button type="button" data-value="${v}" aria-label="${v} étoile${v > 1 ? 's' : ''}">★</button>`).join('')}
         </div>
         <textarea id="reviewComment" maxlength="280" placeholder="Dites ce que vous avez pensé du produit..."></textarea>
-        <button type="submit" id="reviewSubmit">Publier l’avis</button>
+        <button type="submit" id="reviewSubmit">Publier l'avis</button>
       </form>
     ` : ''}
     ${!hasPurchased && !hasReviewed ? `<p class="review-empty">Achetez ce produit pour pouvoir laisser un avis.</p>` : ''}
@@ -222,7 +217,7 @@ async function initializeReviews(product, userId) {
       ${reviews.length > 0 ? reviews.map(review => `
         <div class="review-card">
           <strong>${'★'.repeat(Number(review.rating) || 0)}${'☆'.repeat(5 - (Number(review.rating) || 0))}</strong>
-          <p>${(review.comment || 'Aucun commentaire').replace(/</g, '&lt;')}</p>
+          <p>${escapeHtml(review.comment || 'Aucun commentaire')}</p>
           <div class="review-meta">${new Date(review.created_at).toLocaleDateString('fr-FR')} · ${review.user_id === userId ? 'Vous' : 'Client'}</div>
         </div>
       `).join('') : '<p class="review-empty">Soyez le premier à donner votre avis.</p>'}
@@ -249,7 +244,6 @@ async function initializeReviews(product, userId) {
       showMsg('Choisissez une note de 1 à 5 étoiles.', 'error');
       return;
     }
-
     if (!comment) {
       showMsg('Ajoutez un commentaire avant de publier.', 'error');
       return;
@@ -266,48 +260,19 @@ async function initializeReviews(product, userId) {
       created_at: new Date().toISOString()
     };
 
-    try {
-      const { error } = await supabaseClient.from('reviews').insert([reviewPayload]);
-      if (error) throw error;
-      reviews = [reviewPayload, ...reviews];
-      showMsg('Avis publié avec succès.', 'success');
-    } catch {
-      reviews = [reviewPayload, ...reviews];
-      saveLocalReviews(product.id, reviews);
-      showMsg('Avis enregistré localement.', 'success');
+    const { error } = await supabaseClient.from('reviews').insert([reviewPayload]);
+    if (error) {
+      // Pas de secours localStorage : un avis invisible aux autres est
+      // pire qu'un message d'erreur honnête.
+      showMsg('Erreur lors de la publication de l\'avis. Réessayez.', 'error');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Publier l\'avis';
+      return;
     }
 
+    showMsg('Avis publié avec succès.', 'success');
     initializeReviews(product, userId);
   });
-}
-
-async function passerCommande(userId, items) {
-  const total = items.reduce((s, i) => s + i.prix * i.qty, 0);
-
-  const { data: commande, error: cmdError } = await supabaseClient
-    .from('commandes')
-    .insert([{ user_id: userId, total, statut: 'confirmee' }])
-    .select().single();
-
-  if (cmdError) throw cmdError;
-
-  const lignes = items.map(i => ({
-    commande_id: commande.id,
-    produit_id:  i.id,
-    titre:       i.titre,
-    prix_unitaire: i.prix,
-    quantite:    i.qty,
-    image_url:   i.image_url
-  }));
-
-  const { error: lignesError } = await supabaseClient.from('commande_items').insert(lignes);
-  if (lignesError) throw lignesError;
-
-  // Décrémenter le stock
-  for (const item of items) {
-    const { data: prod } = await supabaseClient.from('produits').select('stock').eq('id', item.id).single();
-    await supabaseClient.from('produits').update({ stock: Math.max(0, prod.stock - item.qty) }).eq('id', item.id);
-  }
 }
 
 function showError() {

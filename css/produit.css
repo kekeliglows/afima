@@ -230,6 +230,89 @@
 .btn-panier:hover { border-color: #111; background: #f9fafb; }
 .btn-panier:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── ACTIONS SUPPLÉMENTAIRES ── */
+.produit-extra-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.wishlist-btn-product {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #111;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.wishlist-btn-product.active {
+  background: #dc2626;
+  color: #fff;
+  border-color: #dc2626;
+}
+.wishlist-btn-product svg { width: 16px; height: 16px; }
+
+.currency-select {
+  padding: 12px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: #fff;
+  color: #111;
+  min-width: 150px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23111111' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.currency-select:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+}
+
+.currency-select:focus {
+  outline: none;
+  border-color: #111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+}
+
+.currency-select:active {
+  border-color: #111;
+}
+
+/* Styling des options dans le dropdown */
+.currency-select option {
+  padding: 8px 12px;
+  background: #fff;
+  color: #111;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.currency-select option:checked {
+  background: linear-gradient(#e5e7eb, #e5e7eb);
+  background-color: #e5e7eb;
+  color: #111;
+}
+
+.currency-select option:hover {
+  background-color: #f3f4f6;
+  color: #111;
+}
+
 /* ── MESSAGE ── */
 .produit-msg {
   padding: 12px 16px;

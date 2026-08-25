@@ -17,6 +17,7 @@
     rel="stylesheet">
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/profil.css">
+  <link rel="stylesheet" href="../css/baham.css">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://afima.app/html/profil.html">
   <meta property="og:title" content="Mon Profil — afima">
@@ -33,6 +34,8 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="../js/utils/greeting.js"></script>
   <script src="../js/utils/currency.js"></script>
+  <script src="../js/utils/baham.js"></script>
+  <script src="../js/baham.js"></script>
   <script src="../js/profil.js" defer></script>
 </head>
 
@@ -65,7 +68,14 @@
   </header>
 
   <main class="profil-main">
-    <div class="profil-layout">
+    <div class="profile-loader" id="profileLoader" role="status" aria-label="Chargement du profil">
+      <div class="container" aria-hidden="true">
+        <div class="dot"></div>
+      </div>
+      <span class="sr-only">Chargement du profil...</span>
+    </div>
+
+    <div class="profil-layout is-loading">
 
       <!-- Carte profil gauche -->
       <aside class="profil-card">
@@ -130,14 +140,14 @@
             <label for="profilTel">Téléphone</label>
             <div class="input-wrap">
               <i data-lucide="phone" class="input-icon"></i>
-              <input type="tel" id="profilTel" placeholder="+225 00 00 00 00" autocomplete="tel">
+              <input type="tel" id="profilTel" placeholder="+228 00 00 00 00" autocomplete="tel">
             </div>
           </div>
           <div class="input-group">
             <label for="profilVille">Ville</label>
             <div class="input-wrap">
               <i data-lucide="map-pin" class="input-icon"></i>
-              <input type="text" id="profilVille" placeholder="Ex : Abidjan">
+              <input type="text" id="profilVille" placeholder="Ex : Lomé">
             </div>
           </div>
           <div class="input-group">

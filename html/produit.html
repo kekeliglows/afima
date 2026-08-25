@@ -23,6 +23,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="../js/utils/currency.js"></script>
+  <script src="../js/utils/wishlist.js"></script>
   <script src="../js/produit.js" defer></script>
 </head>
 <body>
@@ -137,6 +138,26 @@
             <button class="btn-panier" id="btnPanier">
               <i data-lucide="shopping-cart"></i> Ajouter au panier
             </button>
+          </div>
+
+          <div class="produit-extra-actions">
+            <button class="wishlist-btn-product" id="wishlistButton" type="button" aria-label="Ajouter aux favoris">
+              <i data-lucide="heart"></i> Ajouter aux favoris
+            </button>
+            <select id="currencySelect" class="currency-select" aria-label="Choisir une devise">
+              <option value="EUR">€ EUR</option>
+              <option value="USD">$ USD</option>
+              <option value="XOF">FCFA XOF</option>
+              <option value="XAF">FCFA XAF</option>
+              <option value="MAD">DH MAD</option>
+              <option value="NGN">₦ NGN</option>
+              <option value="GHS">GH₵ GHS</option>
+              <option value="TND">DT TND</option>
+              <option value="DZD">DA DZD</option>
+              <option value="EGP">E£ EGP</option>
+              <option value="KES">KSh KES</option>
+              <option value="ZAR">R ZAR</option>
+            </select>
           </div>
 
           <div id="produit-message" class="produit-msg hidden" role="alert"></div>

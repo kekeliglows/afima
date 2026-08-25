@@ -5,6 +5,7 @@ const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let allProduits = [];
 let currentUserId = null;
 let wishlist = [];
+let currentCurrency = Currency.getUserCurrency();
 
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
@@ -27,9 +28,11 @@ document.addEventListener('click', e => {
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  currentUserId = session.user.id;
+  currentUserId = session?.user?.id || null;
 
-  if (!session) { window.location.href = 'login.html'; return; }
+  if (!session) {
+    currentUserId = null;
+  }
 
   // Badge panier
   const cart  = JSON.parse(localStorage.getItem('afima_cart') || '[]');
@@ -37,8 +40,9 @@ async function init() {
   const badge = document.getElementById('cartBadge');
   if (badge && total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
 
-  await loadWishlist();
   await loadProduits();
+  await loadWishlist();
+  bindCurrencySelector();
 
   document.getElementById('searchInput').addEventListener('input', renderProduits);
   document.getElementById('sortSelect').addEventListener('change', renderProduits);
@@ -91,8 +95,8 @@ function renderWishlist() {
 
 async function loadWishlist() {
   try {
-    const { data } = await supabaseClient.from('wishlists').select('*').eq('user_id', currentUserId);
-    wishlist = (data || []).map(item => ({ id: item.product_id, titre: item.product_title || 'Produit' }));
+    const ids = await Wishlist.getWishlistIds({ supabaseClient, userId: currentUserId });
+    wishlist = allProduits.filter(p => ids.includes(String(p.id))).map(p => ({ id: p.id, titre: p.titre }));
   } catch {
     wishlist = [];
   }
@@ -100,23 +104,26 @@ async function loadWishlist() {
 }
 
 async function toggleWishlist(productId) {
-  const product = allProduits.find(p => p.id === productId);
+  const product = allProduits.find(p => String(p.id) === String(productId));
   if (!product) return;
 
-  const exists = wishlist.some(item => item.id === productId);
-  if (exists) {
-    try {
-      await supabaseClient.from('wishlists').delete().eq('user_id', currentUserId).eq('product_id', productId);
-    } catch {}
-    wishlist = wishlist.filter(item => item.id !== productId);
-  } else {
-    try {
-      await supabaseClient.from('wishlists').insert([{ user_id: currentUserId, product_id: productId, product_title: product.titre }]);
-    } catch {}
-    wishlist = [...wishlist, { id: productId, titre: product.titre }];
-  }
+  const result = await Wishlist.toggleProductWishlist({ supabaseClient, userId: currentUserId, product, productId });
+  const ids = result.ids || [];
+  wishlist = allProduits.filter(p => ids.includes(String(p.id))).map(p => ({ id: p.id, titre: p.titre }));
   renderWishlist();
   renderProduits();
+}
+
+function bindCurrencySelector() {
+  const selector = document.getElementById('currencySelect');
+  if (!selector) return;
+  selector.value = Currency.getUserCurrency();
+  selector.addEventListener('change', (event) => {
+    const code = event.target.value;
+    Currency.setUserCurrency(code);
+    currentCurrency = code;
+    renderProduits();
+  });
 }
 
 function renderProduits() {
@@ -163,7 +170,7 @@ function renderProduits() {
           <p class="card-titre">${p.titre}</p>
           <p class="card-description">${p.description || ''}</p>
           <div class="card-footer">
-            <span class="card-prix">${Currency.formatPrice(p.prix)}</span>
+            <span class="card-prix">${Currency.formatPrice(p.prix, Currency.getProductCurrencyCode(p), currentCurrency)}</span>
             ${stockBadge}
           </div>
         </a>
