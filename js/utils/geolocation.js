@@ -1,6 +1,5 @@
 // ── GÉOLOCALISATION ADRESSE LIVRAISON ──
 const LocationService = {
-  // Pays africains supportés avec formules d'adresse
   COUNTRIES: {
     CI: { name: 'Côte d\'Ivoire', dial: '+225', currency: 'XOF', fields: ['ville', 'quartier'] },
     SN: { name: 'Sénégal', dial: '+221', currency: 'XOF', fields: ['ville', 'quartier'] },
@@ -23,7 +22,7 @@ const LocationService = {
     ZA: { name: 'Afrique du Sud', dial: '+27', currency: 'ZAR', fields: ['province', 'city', 'suburb'] }
   },
 
-  // Détecter le pays via timezone API (gratuite)
+  // Détecter le pays via timezone, avec repli sur une API IP tierce
   async detectCountry() {
     try {
       const tz = Intl.DateTimeFormat?.().resolvedOptions?.()?.timeZone || '';
@@ -38,21 +37,36 @@ const LocationService = {
       };
       if (tzCountry[tz]) return tzCountry[tz];
 
-      // Fallback: API IP gratuite
-      const res = await fetch('https://ipapi.co/json/', { timeout: 3000 });
-      const data = await res.json();
-      return data.country_code || 'CI';
+      // Repli : API IP tierce, avec un vrai timeout cette fois (AbortController)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      try {
+        const res = await fetch('https://ipapi.co/json/', { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) return 'CI';
+        const data = await res.json();
+        return (data.country_code && this.COUNTRIES[data.country_code]) ? data.country_code : 'CI';
+      } finally {
+        clearTimeout(timeoutId);
+      }
     } catch {
       return 'CI';
     }
   },
 
-  // Obtrer les adresses sauvegardées
   getSavedAddresses() {
-    return JSON.parse(localStorage.getItem('afima_addresses') || '[]');
+    try {
+      const raw = localStorage.getItem('afima_addresses');
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      // Données corrompues : on repart sur une liste vide plutôt que de planter
+      localStorage.removeItem('afima_addresses');
+      return [];
+    }
   },
 
-  // Sauvegarder une adresse
   saveAddress(address) {
     const addresses = this.getSavedAddresses();
     const idx = addresses.findIndex(a => a.id === address.id);
@@ -61,18 +75,15 @@ const LocationService = {
     localStorage.setItem('afima_addresses', JSON.stringify(addresses));
   },
 
-  // Définir l'adresse par défaut
   setDefaultAddress(id) {
     const addresses = this.getSavedAddresses().map(a => ({ ...a, isDefault: a.id === id }));
     localStorage.setItem('afima_addresses', JSON.stringify(addresses));
   },
 
-  // Adresse par défaut
   getDefaultAddress() {
     return this.getSavedAddresses().find(a => a.isDefault) || null;
   },
 
-  // Supprimer une adresse
   deleteAddress(id) {
     const addresses = this.getSavedAddresses().filter(a => a.id !== id);
     localStorage.setItem('afima_addresses', JSON.stringify(addresses));
