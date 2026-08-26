@@ -15,11 +15,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initProfile() {
-  const profileLoader = document.getElementById('profileLoader');
   await applyPendingProfileIfAny(sb); // même fonction que dans login.js, à dupliquer ou factoriser
 
-  try {
-    const { data: { session } } = await sb.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
     if (!session) {
       window.location.href = 'login.html';
       return;
@@ -35,11 +33,7 @@ async function initProfile() {
 
     await loadProfile(session.user);
     await loadProductCount(currentUserId);
-    initVendeurModal();
-  } finally {
-    profileLoader?.classList.add('hidden');
-    document.querySelector('.profil-layout')?.classList.remove('is-loading');
-  }
+  initVendeurModal();
 }
 
 async function loadProfile(sessionUser) {

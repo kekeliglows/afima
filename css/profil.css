@@ -6,63 +6,12 @@
   width: 100%;
 }
 
-.profile-loader {
-  --uib-size: 45px;
-  --uib-color: #111111;
-  --uib-speed: 2s;
-  min-height: 420px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.profile-loader.hidden { display: none; }
-.profile-loader .container {
-  position: relative;
-  width: var(--uib-size);
-  height: var(--uib-size);
-}
-.profile-loader .container::before,
-.profile-loader .container::after,
-.profile-loader .dot::before,
-.profile-loader .dot::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background-color: var(--uib-color);
-  animation: profile-loader-pulse var(--uib-speed) linear infinite;
-  transform: scale(0);
-  opacity: 0;
-}
-.profile-loader .container::after { animation-delay: calc(var(--uib-speed) / -4); }
-.profile-loader .dot::before { animation-delay: calc(var(--uib-speed) * -0.5); }
-.profile-loader .dot::after { animation-delay: calc(var(--uib-speed) * -0.75); }
-@keyframes profile-loader-pulse {
-  0% { transform: scale(0); opacity: 1; }
-  100% { transform: scale(1); opacity: 0; }
-}
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
 .profil-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 28px;
   align-items: start;
 }
-.profil-layout.is-loading { visibility: hidden; }
 
 /* ── CARTE PROFIL ── */
 .profil-card {

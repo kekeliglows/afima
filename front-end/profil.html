@@ -8,7 +8,7 @@
   <meta name="description"
     content="Gérez votre profil afima : mettez à jour votre nom, téléphone, ville, bio et avatar utilisateur.">
   <meta name="robots" content="noindex, nofollow">
-  <link rel="canonical" href="https://afima.app/html/profil.html">
+  <link rel="canonical" href="https://afima-ruby.vercel.app/front-end/profil.html">
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
   <meta name="theme-color" content="#111111">
@@ -19,17 +19,17 @@
   <link rel="stylesheet" href="../css/profil.css">
   <link rel="stylesheet" href="../css/baham.css">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://afima.app/html/profil.html">
+  <meta property="og:url" content="https://afima-ruby.vercel.app/front-end/profil.html">
   <meta property="og:title" content="Mon Profil — afima">
   <meta property="og:description"
     content="Gérez votre profil vendeur et acheteur sur afima, personnalisez votre page et mettez à jour vos informations.">
-  <meta property="og:image" content="https://afima.app/og-image.png">
+  <meta property="og:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:site_name" content="afima">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mon Profil — afima">
   <meta name="twitter:description" content="Gérez votre profil vendeur et achetez sur afima.">
-  <meta name="twitter:image" content="https://afima.app/og-image.png">
+  <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
   <script src="../js/utils/greeting.js"></script>
@@ -68,14 +68,7 @@
   </header>
 
   <main class="profil-main">
-    <div class="profile-loader" id="profileLoader" role="status" aria-label="Chargement du profil">
-      <div class="container" aria-hidden="true">
-        <div class="dot"></div>
-      </div>
-      <span class="sr-only">Chargement du profil...</span>
-    </div>
-
-    <div class="profil-layout is-loading">
+    <div class="profil-layout">
 
       <!-- Carte profil gauche -->
       <aside class="profil-card">

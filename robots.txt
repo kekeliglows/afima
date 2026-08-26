@@ -1,9 +1,15 @@
 User-agent: *
 Allow: /
-Allow: /catalogue.html
-Allow: /login.html
 
-# Pages privées — ne pas indexer
-Disallow: /ajouter-produit.html
+# Espaces authentifiés et formulaires sans intérêt pour l'indexation.
+Disallow: /front-end/login.html
+Disallow: /front-end/signup.html
+Disallow: /front-end/dashboard.html
+Disallow: /front-end/profil.html
+Disallow: /front-end/panier.html
+Disallow: /front-end/commandes.html
+Disallow: /front-end/messages.html
+Disallow: /front-end/ajouter-produit.html
+Disallow: /front-end/produit.html
 
-Sitemap: https://afima.app/sitemap.xml
+Sitemap: https://afima-ruby.vercel.app/sitemap.xml

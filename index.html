@@ -3,23 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>afima — Achetez & Vendez facilement en Afrique</title>
-  <meta name="description" content="afima est la marketplace N°1 en Afrique. Achetez et vendez des produits en toute simplicité, rapidement et en toute sécurité.">
-  <meta name="keywords" content="marketplace, afrique, acheter, vendre, produits, afima, e-commerce">
+  <title>Afima — Marketplace pour acheter et vendre en ligne</title>
+  <meta name="description" content="Afima est une marketplace en ligne qui permet de découvrir des produits et de publier des annonces facilement.">
   <meta name="author" content="afima">
   <meta name="robots" content="index, follow">
-  <link rel="canonical" href="https://afima.app/">
+  <link rel="canonical" href="https://afima-ruby.vercel.app/">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://afima.app/">
-  <meta property="og:title" content="afima — Achetez & Vendez facilement en Afrique">
-  <meta property="og:description" content="La marketplace N°1 en Afrique. Publiez un produit en 2 minutes, achetez en toute sécurité.">
-  <meta property="og:image" content="https://afima.app/og-image.png">
+  <meta property="og:url" content="https://afima-ruby.vercel.app/">
+  <meta property="og:title" content="Afima — Marketplace pour acheter et vendre en ligne">
+  <meta property="og:description" content="Découvrez des produits et publiez vos annonces sur Afima.">
+  <meta property="og:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:site_name" content="afima">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="afima — Achetez & Vendez facilement en Afrique">
-  <meta name="twitter:description" content="La marketplace N°1 en Afrique. Publiez un produit en 2 minutes.">
-  <meta name="twitter:image" content="https://afima.app/og-image.png">
+  <meta name="twitter:title" content="Afima — Marketplace pour acheter et vendre en ligne">
+  <meta name="twitter:description" content="Découvrez des produits et publiez vos annonces sur Afima.">
+  <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <link rel="icon" href="assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="assets/logo.png">
   <meta name="theme-color" content="#111111">
@@ -27,7 +26,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/index.css">
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"WebSite","name":"afima","url":"https://afima.app/","description":"Marketplace africaine","potentialAction":{"@type":"SearchAction","target":"https://afima.app/html/catalogue.html?q={search_term_string}","query-input":"required name=search_term_string"}}
+  {"@context":"https://schema.org","@graph":[{"@type":"Organization","name":"Afima","url":"https://afima-ruby.vercel.app/","logo":"https://afima-ruby.vercel.app/assets/logo.png"},{"@type":"WebSite","name":"Afima","url":"https://afima-ruby.vercel.app/","description":"Marketplace en ligne","potentialAction":{"@type":"SearchAction","target":"https://afima-ruby.vercel.app/front-end/catalogue.html?q={search_term_string}","query-input":"required name=search_term_string"}}]}
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
@@ -43,8 +42,8 @@
         <span class="logo-text">afima</span>
       </a>
       <ul class="header_btn" id="navLinks">
-        <li><a href="html/a-propos.html">À propos</a></li>
-        <li><a href="html/faq.html">FAQ</a></li>
+        <li><a href="front-end/a-propos.html">À propos</a></li>
+        <li><a href="front-end/faq.html">FAQ</a></li>
         <li><a href="front-end/login.html" class="btn btn-outline">Connexion</a></li>
         <li><a href="front-end/signup.html" class="btn btn-primary">Créer un compte</a></li>
       </ul>
@@ -54,8 +53,8 @@
       </button>
     </nav>
     <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
-      <a href="html/a-propos.html" class="mobile-link"><i data-lucide="info"></i> À propos</a>
-      <a href="html/faq.html" class="mobile-link"><i data-lucide="help-circle"></i> FAQ</a>
+      <a href="front-end/a-propos.html" class="mobile-link"><i data-lucide="info"></i> À propos</a>
+      <a href="front-end/faq.html" class="mobile-link"><i data-lucide="help-circle"></i> FAQ</a>
       <a href="front-end/login.html" class="mobile-link"><i data-lucide="log-in"></i> Connexion</a>
       <a href="front-end/signup.html" class="mobile-link mobile-link-primary"><i data-lucide="user-plus"></i> Créer un compte</a>
     </div>
@@ -71,7 +70,7 @@
       <div class="hero-inner">
         <div class="hero-badge reveal">
           <i data-lucide="shopping-bag"></i>
-          Marketplace N°1 en Afrique
+          Marketplace en ligne
         </div>
 
         <h1 id="hero-title" class="reveal reveal-delay-1">
@@ -80,7 +79,7 @@
         </h1>
 
         <p class="hero-sub reveal reveal-delay-2">
-          Découvrez des milliers de produits ou mettez les vôtres en vente en quelques clics. Simple, rapide, sécurisé.
+          Découvrez des produits ou publiez les vôtres en quelques clics. Une expérience simple et claire pour acheter et vendre en ligne.
         </p>
 
         <div class="hero-actions reveal reveal-delay-3">
@@ -88,7 +87,7 @@
             Commencer maintenant
             <i data-lucide="arrow-right"></i>
           </button>
-          <a href="html/catalogue.html" class="btn-ghost">
+          <a href="front-end/catalogue.html" class="btn-ghost">
             <i data-lucide="layout-grid"></i>
             Voir le catalogue
           </a>
@@ -101,33 +100,12 @@
             <div class="avatar av3"></div>
             <div class="avatar av4"></div>
           </div>
-          <p><strong>+4 800</strong> vendeurs nous font confiance</p>
+          <p>Découvrez, achetez et vendez sur Afima.</p>
         </div>
       </div>
     </section>
 
     <!-- ══ STATS ══ -->
-    <section class="stats-section" aria-label="Chiffres clés">
-      <div class="stats-inner">
-        <div class="stat-card reveal">
-          <span class="stat-num" data-target="12000">0</span>
-          <span class="stat-label">Produits en ligne</span>
-        </div>
-        <div class="stat-card reveal reveal-delay-1">
-          <span class="stat-num" data-target="4800">0</span>
-          <span class="stat-label">Vendeurs actifs</span>
-        </div>
-        <div class="stat-card reveal reveal-delay-2">
-          <span class="stat-num" data-target="98">0</span>
-          <span class="stat-label">% de satisfaction</span>
-        </div>
-        <div class="stat-card reveal reveal-delay-3">
-          <span class="stat-num" data-target="24">0</span>
-          <span class="stat-label">h support disponible</span>
-        </div>
-      </div>
-    </section>
-
     <!-- ══ FEATURES ══ -->
     <section class="features-section" aria-label="Nos avantages">
       <div class="section-header reveal">
@@ -138,23 +116,23 @@
       <div class="features-grid">
         <div class="feature-card reveal">
           <div class="feature-icon"><i data-lucide="zap"></i></div>
-          <h3>Ultra rapide</h3>
-          <p>Publiez un produit en moins de 2 minutes. Aucune compétence technique requise.</p>
+          <h3>Simple à utiliser</h3>
+          <p>Publiez une annonce et explorez le catalogue depuis une interface pensée pour aller à l'essentiel.</p>
         </div>
         <div class="feature-card reveal reveal-delay-1">
           <div class="feature-icon"><i data-lucide="shield-check"></i></div>
-          <h3>100% sécurisé</h3>
-          <p>Vos données et transactions sont protégées par une infrastructure de niveau entreprise.</p>
+          <h3>Transactions encadrées</h3>
+          <p>Suivez vos achats et vos ventes depuis votre espace Afima.</p>
         </div>
         <div class="feature-card reveal reveal-delay-2">
           <div class="feature-icon"><i data-lucide="globe"></i></div>
-          <h3>Accessible partout</h3>
-          <p>Disponible sur mobile, tablette et desktop. Vendez depuis n'importe où en Afrique.</p>
+          <h3>Sur tous vos écrans</h3>
+          <p>Consultez le catalogue et gérez vos annonces sur mobile comme sur ordinateur.</p>
         </div>
         <div class="feature-card reveal reveal-delay-3">
           <div class="feature-icon"><i data-lucide="trending-up"></i></div>
-          <h3>Croissance garantie</h3>
-          <p>Atteignez des milliers d'acheteurs potentiels dès la publication de votre annonce.</p>
+          <h3>Un espace pour vendre</h3>
+          <p>Présentez vos produits et échangez avec les utilisateurs de la plateforme.</p>
         </div>
       </div>
     </section>
@@ -171,7 +149,7 @@
             <div class="step-num">01</div>
             <div class="step-content">
               <h3>Créez votre compte</h3>
-              <p>Inscription gratuite en 30 secondes avec votre adresse e-mail.</p>
+              <p>Inscrivez-vous avec votre adresse e-mail ou votre compte Google.</p>
             </div>
           </div>
           <div class="step-arrow reveal reveal-delay-1"><i data-lucide="arrow-right"></i></div>
@@ -179,7 +157,7 @@
             <div class="step-num">02</div>
             <div class="step-content">
               <h3>Publiez ou parcourez</h3>
-              <p>Ajoutez vos produits ou explorez le catalogue de milliers d'articles.</p>
+              <p>Ajoutez vos produits ou explorez le catalogue d'articles disponibles.</p>
             </div>
           </div>
           <div class="step-arrow reveal reveal-delay-2"><i data-lucide="arrow-right"></i></div>
@@ -200,13 +178,13 @@
         <div class="cta-glow" aria-hidden="true"></div>
         <span class="section-tag light">Rejoignez-nous</span>
         <h2>Prêt à commencer ?</h2>
-        <p>Rejoignez des milliers de vendeurs et d'acheteurs sur afima dès aujourd'hui.</p>
+        <p>Créez votre compte pour découvrir les produits et publier vos annonces sur Afima.</p>
         <div class="cta-actions">
           <a href="front-end/signup.html" class="cta-btn-primary">
             Créer un compte gratuit
             <i data-lucide="arrow-right"></i>
           </a>
-          <a href="html/catalogue.html" class="cta-btn-ghost">
+          <a href="front-end/catalogue.html" class="cta-btn-ghost">
             <i data-lucide="layout-grid"></i>
             Explorer le catalogue
           </a>
@@ -224,10 +202,10 @@
       </div>
       <p>&copy; 2026 afima. Tous droits réservés.</p>
       <div class="footer-links">
-        <a href="html/a-propos.html">À propos</a>
-        <a href="html/faq.html">FAQ</a>
-        <a href="html/conditions-utilisation.html">Conditions d'utilisation</a>
-        <a href="html/politique-confidentialite.html">Politique de confidentialité</a>
+        <a href="front-end/a-propos.html">À propos</a>
+        <a href="front-end/faq.html">FAQ</a>
+        <a href="front-end/conditions-utilisation.html">Conditions d'utilisation</a>
+        <a href="front-end/politique-confidentialite.html">Politique de confidentialité</a>
       </div>
     </div>
   </footer>

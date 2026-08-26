@@ -57,7 +57,7 @@ const btnGetStarted = document.querySelector('.get_started');
 if (btnGetStarted) {
   btnGetStarted.addEventListener('click', async () => {
     const { data: { session } } = await supabaseClient.auth.getSession();
-    const pageLink = (page) => window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') ? `html/${page}` : page;
+    const pageLink = (page) => window.location.pathname === '/' || window.location.pathname.endsWith('/index.html') ? `front-end/${page}` : page;
     window.location.href = session ? pageLink('catalogue.html') : pageLink('login.html');
   });
 }
