@@ -1,19 +1,32 @@
 // ── CONFIGURATION DES DEVISES ──
-const BASE_CURRENCY = 'EUR';
+// BASE_CURRENCY = devise de stockage native de produits.prix (bigint,
+// sans décimales) — cohérent avec le marché cible (UEMOA) et avec
+// Kkiapay qui exige des montants entiers en XOF.
+//
+// ⚠️ Les taux ci-dessous sont des valeurs approximatives figées, pas
+// un flux temps réel. C'est un correctif tactique pour que l'affichage
+// soit au moins juste — un vrai service de taux de change reste à
+// construire (voir futur.md, section anti-pattern taux figés).
+const BASE_CURRENCY = 'XOF';
 const DEVISES = {
-  EUR: { code: 'EUR', symbol: '€', name: 'Euro', rate: 1 },
-  USD: { code: 'USD', symbol: '$', name: 'Dollar américain', rate: 1.1 },
-  XOF: { code: 'XOF', symbol: 'FCFA', name: 'Franc CFA (Ouest)', rate: 655.957 },
-  XAF: { code: 'XAF', symbol: 'FCFA', name: 'Franc CFA (Central)', rate: 655.957 },
-  MAD: { code: 'MAD', symbol: 'DH', name: 'Dirham marocain', rate: 10.8 },
-  NGN: { code: 'NGN', symbol: '₦', name: 'Naira nigérian', rate: 1650 },
-  GHS: { code: 'GHS', symbol: 'GH₵', name: 'Cedi ghanéen', rate: 15.5 },
-  TND: { code: 'TND', symbol: 'DT', name: 'Dinar tunisien', rate: 3.3 },
-  DZD: { code: 'DZD', symbol: 'DA', name: 'Dinar algérien', rate: 135 },
-  EGP: { code: 'EGP', symbol: 'E£', name: 'Livre égyptienne', rate: 31 },
-  KES: { code: 'KES', symbol: 'KSh', name: 'Shilling kényan', rate: 155 },
-  ZAR: { code: 'ZAR', symbol: 'R', name: 'Rand sud-africain', rate: 19.5 }
+  XOF: { code: 'XOF', symbol: 'FCFA', name: 'Franc CFA (Ouest)', rate: 1 },
+  XAF: { code: 'XAF', symbol: 'FCFA', name: 'Franc CFA (Central)', rate: 1 },
+  EUR: { code: 'EUR', symbol: '€', name: 'Euro', rate: 1 / 655.957 },
+  USD: { code: 'USD', symbol: '$', name: 'Dollar américain', rate: 1.1 / 655.957 },
+  MAD: { code: 'MAD', symbol: 'DH', name: 'Dirham marocain', rate: 10.8 / 655.957 },
+  NGN: { code: 'NGN', symbol: '₦', name: 'Naira nigérian', rate: 1650 / 655.957 },
+  GHS: { code: 'GHS', symbol: 'GH₵', name: 'Cedi ghanéen', rate: 15.5 / 655.957 },
+  TND: { code: 'TND', symbol: 'DT', name: 'Dinar tunisien', rate: 3.3 / 655.957 },
+  DZD: { code: 'DZD', symbol: 'DA', name: 'Dinar algérien', rate: 135 / 655.957 },
+  EGP: { code: 'EGP', symbol: 'E£', name: 'Livre égyptienne', rate: 31 / 655.957 },
+  KES: { code: 'KES', symbol: 'KSh', name: 'Shilling kényan', rate: 155 / 655.957 },
+  ZAR: { code: 'ZAR', symbol: 'R', name: 'Rand sud-africain', rate: 19.5 / 655.957 }
 };
+
+// Devises qui s'affichent avec des décimales — toutes les autres sont
+// arrondies à l'entier (cohérent avec la plupart des devises locales
+// du marché cible, qui ne se manipulent pas en centimes au quotidien).
+const DECIMAL_CURRENCIES = ['EUR', 'USD'];
 
 const TZ_TO_CURRENCY = {
   'Africa/Abidjan': 'XOF', 'Africa/Dakar': 'XOF', 'Africa/Bamako': 'XOF',
@@ -59,18 +72,19 @@ function convertPrice(price, fromCode = BASE_CURRENCY, toCode = null) {
 
   if (source.code === target.code) return value;
 
+  // Chaque "rate" représente : unités de cette devise pour 1 XOF (la base).
   const valueInBase = value / source.rate;
   const converted = valueInBase * target.rate;
 
-  return target.code === 'XOF' || target.code === 'XAF' || target.code === 'NGN' || target.code === 'GHS' || target.code === 'MAD' || target.code === 'TND' || target.code === 'DZD' || target.code === 'EGP' || target.code === 'KES' || target.code === 'ZAR'
-    ? Math.round(converted)
-    : parseFloat(converted.toFixed(2));
+  return DECIMAL_CURRENCIES.includes(target.code)
+    ? parseFloat(converted.toFixed(2))
+    : Math.round(converted);
 }
 
 function formatPrice(price, fromCode = BASE_CURRENCY, toCode = null) {
   const target = DEVISES[normalizeCurrencyCode(toCode || getUserCurrency())] || DEVISES[BASE_CURRENCY];
   const value = convertPrice(price, fromCode, toCode);
-  const formattedValue = target.code === 'EUR' || target.code === 'USD'
+  const formattedValue = DECIMAL_CURRENCIES.includes(target.code)
     ? value.toFixed(2).replace('.', ',')
     : value.toLocaleString('fr-FR');
   return `${formattedValue} ${target.symbol}`;

@@ -4,6 +4,17 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let allProduits = [];
 let deleteTargetId = null;
+let currentUserId = null;
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function formatPriceValue(value) {
   if (typeof window.Currency?.formatPrice === 'function') {
@@ -20,78 +31,43 @@ async function init() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
 
-  const userId = session.user.id;
+  currentUserId = session.user.id;
 
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  // Profil nom et salutation dynamique
-  const { data: profile } = await sb.from('profiles').select('full_name').eq('id', userId).single();
+  const { data: profile } = await sb.from('profiles').select('full_name').eq('id', currentUserId).single();
   const displayName = profile?.full_name || session.user.email.split('@')[0];
   startGreetingRefresh('dashWelcome', displayName);
-  
-  // Date du jour
+
   const dateEl = document.getElementById('dashDate');
   if (dateEl) dateEl.textContent = getFormattedDate();
 
-  await loadStats(userId);
-  await loadProduits(userId);
+  await loadStats();
+  await loadProduits();
 
   document.getElementById('dashSearch').addEventListener('input', e => renderTable(e.target.value));
 }
 
-async function loadStats(userId) {
-  let produits = [];
-  try {
-    const { data, error } = await sb.from('produits').select('id, stock, views').eq('user_id', userId);
-    if (error) throw error;
-    produits = data || [];
-  } catch {
-    const { data } = await sb.from('produits').select('id, stock').eq('user_id', userId);
-    produits = data || [];
+async function loadStats() {
+  // Toutes les stats sont calculées côté serveur — le client ne reçoit
+  // jamais les commandes/lignes brutes d'autres vendeurs.
+  const { data, error } = await sb.rpc('get_seller_stats');
+  if (error) {
+    console.warn('Erreur chargement statistiques :', error.message);
+    return;
   }
 
-  const productIds = produits.map(p => p.id);
-  const { data: items = [] } = await sb.from('commande_items').select('quantite, prix_unitaire, produit_id, commande_id');
-  const { data: commandes = [] } = await sb.from('commandes').select('id, created_at');
-  const commandesById = new Map(commandes.map(c => [c.id, c.created_at]));
-
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-  const ventes = items
-    .filter(item => productIds.includes(item.produit_id))
-    .reduce((sum, item) => sum + (item.quantite || 0), 0);
-
-  const revenu = items
-    .filter(item => productIds.includes(item.produit_id))
-    .reduce((sum, item) => sum + (item.prix_unitaire || 0) * (item.quantite || 0), 0);
-
-  const caMois = items
-    .filter(item => {
-      const commandeDate = commandesById.get(item.commande_id);
-      if (!commandeDate) return false;
-      const date = new Date(commandeDate);
-      return date >= startOfMonth && date < endOfMonth && productIds.includes(item.produit_id);
-    })
-    .reduce((sum, item) => sum + (item.prix_unitaire || 0) * (item.quantite || 0), 0);
-
-  const vues = produits.reduce((sum, p) => sum + (typeof p.views === 'number' ? p.views : 0), 0);
-
-  const nbProduits = produits.length;
-  const ruptures   = produits.filter(p => p.stock === 0).length;
-
-  document.getElementById('statProduits').textContent = nbProduits;
-  document.getElementById('statVentes').textContent   = ventes;
-  document.getElementById('statRevenu').textContent   = formatPriceValue(revenu);
-  document.getElementById('statCaMois').textContent   = formatPriceValue(caMois);
-  document.getElementById('statRupture').textContent  = ruptures;
-  document.getElementById('statVues').textContent     = vues;
+  document.getElementById('statProduits').textContent = data.nb_produits;
+  document.getElementById('statVentes').textContent   = data.ventes;
+  document.getElementById('statRevenu').textContent   = formatPriceValue(data.revenu);
+  document.getElementById('statCaMois').textContent   = formatPriceValue(data.ca_mois);
+  document.getElementById('statRupture').textContent  = data.ruptures;
+  document.getElementById('statVues').textContent     = data.vues;
 }
 
-async function loadProduits(userId) {
-  const { data, error } = await sb.from('produits').select('*').eq('user_id', userId).order('created_at', { ascending: false });
+async function loadProduits() {
+  const { data, error } = await sb.from('produits').select('*').eq('user_id', currentUserId).order('created_at', { ascending: false });
   if (error) { showMsg('Erreur : ' + error.message, 'error'); return; }
   allProduits = data || [];
   renderTable('');
@@ -114,12 +90,13 @@ function renderTable(query) {
   tbody.innerHTML = list.map(p => {
     const stockClass = p.stock === 0 ? 'stock-out' : p.stock <= 3 ? 'stock-low' : 'stock-ok';
     const stockLabel = p.stock === 0 ? 'Rupture' : p.stock <= 3 ? `${p.stock} restant(s)` : `${p.stock} en stock`;
+    const titreSafe = escapeHtml(p.titre);
     return `
       <tr>
         <td data-label="Produit">
           <div class="td-produit">
-            <img class="td-img" src="${p.image_url || 'https://placehold.co/48x48/f3f4f6/9ca3af?text=?'}" alt="${p.titre}" loading="lazy">
-            <span class="td-titre">${p.titre}</span>
+            <img class="td-img" src="${escapeHtml(p.image_url || 'https://placehold.co/48x48/f3f4f6/9ca3af?text=?')}" alt="${titreSafe}" loading="lazy">
+            <span class="td-titre">${titreSafe}</span>
           </div>
         </td>
         <td data-label="Prix" class="td-prix">${formatPriceValue(p.prix)}</td>
@@ -138,7 +115,7 @@ function renderTable(query) {
 
 // ── MODAL MODIFIER ──
 function openEdit(id) {
-  const p = allProduits.find(x => x.id === id);
+  const p = allProduits.find(x => String(x.id) === String(id));
   if (!p) return;
   document.getElementById('editId').value          = p.id;
   document.getElementById('editTitre').value       = p.titre;
@@ -158,30 +135,37 @@ document.getElementById('editModal').addEventListener('click', e => { if (e.targ
 document.getElementById('editForm').addEventListener('submit', async e => {
   e.preventDefault();
   const btn = document.getElementById('editSubmit');
+
+  const id     = document.getElementById('editId').value;
+  const titre  = document.getElementById('editTitre').value.trim();
+  const prix   = parseInt(document.getElementById('editPrix').value, 10);
+  const stock  = parseInt(document.getElementById('editStock').value, 10);
+
+  if (!titre) { showMsg('Le titre est obligatoire.', 'error'); return; }
+  if (isNaN(prix) || prix < 0) { showMsg('Prix invalide.', 'error'); return; }
+  if (isNaN(stock) || stock < 0) { showMsg('Stock invalide.', 'error'); return; }
+
   btn.disabled = true;
 
-  const id = document.getElementById('editId').value;
-  const { error } = await sb.from('produits').update({
-    titre:       document.getElementById('editTitre').value,
-    description: document.getElementById('editDescription').value,
-    prix:        parseFloat(document.getElementById('editPrix').value),
-    stock:       parseInt(document.getElementById('editStock').value),
-    image_url:   document.getElementById('editImageUrl').value || null,
-  }).eq('id', id);
+  const payload = {
+    titre,
+    description: document.getElementById('editDescription').value.trim(),
+    prix,
+    stock,
+    image_url: document.getElementById('editImageUrl').value.trim() || null,
+  };
+
+  // Filtre user_id en défense en profondeur — la vraie garantie vient
+  // des policies RLS, mais ça évite un aller-retour serveur inutile
+  // si jamais un id ne nous appartient pas.
+  const { error } = await sb.from('produits').update(payload).eq('id', id).eq('user_id', currentUserId);
 
   btn.disabled = false;
   if (error) { showMsg('Erreur : ' + error.message, 'error'); return; }
 
-  const idx = allProduits.findIndex(x => x.id === id);
-  if (idx !== -1) {
-    allProduits[idx] = { ...allProduits[idx],
-      titre: document.getElementById('editTitre').value,
-      description: document.getElementById('editDescription').value,
-      prix: parseFloat(document.getElementById('editPrix').value),
-      stock: parseInt(document.getElementById('editStock').value),
-      image_url: document.getElementById('editImageUrl').value || null,
-    };
-  }
+  const idx = allProduits.findIndex(x => String(x.id) === String(id));
+  if (idx !== -1) allProduits[idx] = { ...allProduits[idx], ...payload };
+
   closeEdit();
   renderTable(document.getElementById('dashSearch').value);
   showMsg('Produit modifié avec succès.', 'success');
@@ -204,16 +188,15 @@ document.getElementById('deleteConfirm').addEventListener('click', async () => {
   const btn = document.getElementById('deleteConfirm');
   btn.disabled = true;
 
-  const { error } = await sb.from('produits').delete().eq('id', deleteTargetId);
+  const { error } = await sb.from('produits').delete().eq('id', deleteTargetId).eq('user_id', currentUserId);
   btn.disabled = false;
   if (error) { showMsg('Erreur : ' + error.message, 'error'); closeDelete(); return; }
 
-  allProduits = allProduits.filter(p => p.id !== deleteTargetId);
+  allProduits = allProduits.filter(p => String(p.id) !== String(deleteTargetId));
   closeDelete();
   renderTable(document.getElementById('dashSearch').value);
   showMsg('Produit supprimé.', 'success');
 
-  // Mettre à jour stat
   document.getElementById('statProduits').textContent = allProduits.length;
 });
 

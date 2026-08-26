@@ -7,6 +7,17 @@ let currentUserId = null;
 let wishlist = [];
 let currentCurrency = Currency.getUserCurrency();
 
+// ── ÉCHAPPEMENT HTML (anti-XSS) ──
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
@@ -29,10 +40,6 @@ document.addEventListener('click', e => {
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentUserId = session?.user?.id || null;
-
-  if (!session) {
-    currentUserId = null;
-  }
 
   // Badge panier
   const cart  = JSON.parse(localStorage.getItem('afima_cart') || '[]');
@@ -81,8 +88,8 @@ function renderWishlist() {
     <div class="wishlist-list">
       ${wishlist.map(item => `
         <div class="wishlist-pill">
-          <span>${item.titre}</span>
-          <button type="button" data-id="${item.id}" aria-label="Retirer des favoris">✕</button>
+          <span>${escapeHtml(item.titre)}</span>
+          <button type="button" data-id="${escapeHtml(item.id)}" aria-label="Retirer des favoris">✕</button>
         </div>
       `).join('')}
     </div>
@@ -145,7 +152,7 @@ function renderProduits() {
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
         </svg>
-        <p>${query ? `Aucun résultat pour "<strong>${query}</strong>"` : 'Aucun produit disponible pour le moment.'}</p>
+        <p>${query ? `Aucun résultat pour "<strong>${escapeHtml(query)}</strong>"` : 'Aucun produit disponible pour le moment.'}</p>
       </div>`;
     return;
   }
@@ -155,20 +162,21 @@ function renderProduits() {
       ? `<span class="card-stock-badge">${p.stock} en stock</span>`
       : `<span class="card-stock-badge out">Rupture</span>`;
     const isFav = wishlist.some(item => item.id === p.id);
+    const titreSafe = escapeHtml(p.titre);
     return `
       <div class="produit-card">
         <div class="card-img-wrapper">
-          <button class="wishlist-btn ${isFav ? 'active' : ''}" data-id="${p.id}" type="button" aria-label="Ajouter aux favoris">
+          <button class="wishlist-btn ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" type="button" aria-label="Ajouter aux favoris">
             <i data-lucide="heart"></i>
           </button>
-          <a href="produit.html?id=${p.id}" aria-label="Voir ${p.titre}">
-            <img src="${p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image'}"
-                 alt="${p.titre}" loading="lazy" width="400" height="200">
+          <a href="produit.html?id=${encodeURIComponent(p.id)}" aria-label="Voir ${titreSafe}">
+            <img src="${escapeHtml(p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image')}"
+                 alt="${titreSafe}" loading="lazy" width="400" height="200">
           </a>
         </div>
-        <a href="produit.html?id=${p.id}" class="card-body" aria-label="Voir ${p.titre}">
-          <p class="card-titre">${p.titre}</p>
-          <p class="card-description">${p.description || ''}</p>
+        <a href="produit.html?id=${encodeURIComponent(p.id)}" class="card-body" aria-label="Voir ${titreSafe}">
+          <p class="card-titre">${titreSafe}</p>
+          <p class="card-description">${escapeHtml(p.description || '')}</p>
           <div class="card-footer">
             <span class="card-prix">${Currency.formatPrice(p.prix, Currency.getProductCurrencyCode(p), currentCurrency)}</span>
             ${stockBadge}

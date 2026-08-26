@@ -3,10 +3,12 @@ const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const AVATAR_BUCKET = 'avatars';
+const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5 Mo
+
 let currentUserId = null;
 let currentProfile = null;
 
-// Initialisation au chargement de la page
 document.addEventListener('DOMContentLoaded', () => {
     initHamburger();
     initProfile();
@@ -51,19 +53,17 @@ async function loadProfile(sessionUser) {
     return;
   }
 
-  // Profil par défaut si inexistant
-  currentProfile = profile || { 
-      full_name: sessionUser.email.split('@')[0], 
-      bio: '', 
-      phone: '', 
-      city: '', 
-      avatar_url: null, 
+  currentProfile = profile || {
+      full_name: sessionUser.email.split('@')[0],
+      bio: '',
+      phone: '',
+      city: '',
+      avatar_url: null,
       updated_at: sessionUser.created_at,
       role: 'acheteur',
       currency: 'EUR'
   };
 
-  // Création du profil en base s'il n'existe pas encore
   if (!profile) {
     await sb.from('profiles').upsert({
       id: currentUserId,
@@ -76,31 +76,25 @@ async function loadProfile(sessionUser) {
     }, { onConflict: 'id' });
   }
 
-  // Mise à jour de l'affichage HTML
   const displayName = currentProfile.full_name || sessionUser.email.split('@')[0];
   document.getElementById('profilNomDisplay').textContent = displayName;
-  
-  // Afficher la salutation avec le nom
   startGreetingRefresh('profilNomDisplay', displayName);
-  
+
   document.getElementById('profilEmailDisplay').textContent = sessionUser.email;
   document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
-  
-  // Remplissage des champs de formulaire
+
   document.getElementById('profilNom').value = currentProfile.full_name || '';
   document.getElementById('profilTel').value = currentProfile.phone || '';
   document.getElementById('profilVille').value = currentProfile.city || '';
   document.getElementById('profilBio').value = currentProfile.bio || '';
   document.getElementById('profilCurrency').value = currentProfile.currency || 'EUR';
-  
+
   const memberDate = currentProfile.updated_at || sessionUser.created_at;
   document.getElementById('profilMembre').textContent = memberDate
     ? `Membre depuis ${formatDate(memberDate)}`
     : 'Membre depuis —';
 
   renderAvatar(currentProfile.avatar_url);
-
-  // Afficher le rôle et le bouton "Devenir vendeur"
   updateRoleUI(currentProfile.role);
 }
 
@@ -136,7 +130,7 @@ async function loadProductCount(userId) {
 function renderAvatar(url) {
   const avatarImg = document.getElementById('avatarImg');
   const avatarPlaceholder = document.getElementById('avatarPlaceholder');
-  
+
   if (url && avatarImg) {
     avatarImg.src = url;
     avatarImg.classList.remove('hidden');
@@ -147,17 +141,44 @@ function renderAvatar(url) {
   }
 }
 
+function validateAvatarFile(file) {
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    return 'Format non supporté. Utilisez une image JPG, PNG, WEBP ou GIF.';
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    return 'Image trop lourde (5 Mo maximum).';
+  }
+  return null;
+}
+
 function previewAvatar() {
   const fileInput = document.getElementById('avatarFile');
   const file = fileInput.files?.[0];
   if (!file) return;
-  
+
+  const errorMsg = validateAvatarFile(file);
+  if (errorMsg) {
+    showMsg(errorMsg, 'error');
+    fileInput.value = '';
+    return;
+  }
+
   const avatarImg = document.getElementById('avatarImg');
   if (avatarImg) {
     avatarImg.src = URL.createObjectURL(file);
     avatarImg.classList.remove('hidden');
     document.getElementById('avatarPlaceholder')?.classList.add('hidden');
   }
+}
+
+// Extrait le chemin interne au bucket à partir de l'URL publique,
+// pour pouvoir supprimer l'ancien fichier lors d'un remplacement.
+function getStoragePathFromUrl(url) {
+  if (!url) return null;
+  const marker = `/${AVATAR_BUCKET}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return url.slice(idx + marker.length);
 }
 
 async function saveProfile(event) {
@@ -170,6 +191,11 @@ async function saveProfile(event) {
   const currency = document.getElementById('profilCurrency').value;
   const file = document.getElementById('avatarFile').files?.[0];
   const btn = document.getElementById('profilSubmit');
+
+  if (file) {
+    const errorMsg = validateAvatarFile(file);
+    if (errorMsg) { showMsg(errorMsg, 'error'); return; }
+  }
 
   btn.disabled = true;
   const originalBtnText = btn.innerHTML;
@@ -186,11 +212,12 @@ async function saveProfile(event) {
       updated_at: new Date().toISOString()
     };
 
-    // Téléversement de l'avatar vers le bucket Supabase Storage si un fichier a été sélectionné
     if (file) {
+      const oldPath = getStoragePathFromUrl(currentProfile.avatar_url);
+
       const fileExt = file.name.split('.').pop();
       const filePath = `${currentUserId}/avatar-${Date.now()}.${fileExt}`;
-      
+
       const { error: storageError } = await sb.storage
         .from(AVATAR_BUCKET)
         .upload(filePath, file, { upsert: true });
@@ -202,9 +229,15 @@ async function saveProfile(event) {
         .getPublicUrl(filePath);
 
       updates.avatar_url = urlData.publicUrl;
+
+      // Nettoyage de l'ancien avatar (best effort, on n'échoue pas
+      // l'enregistrement du profil si ça rate)
+      if (oldPath) {
+        sb.storage.from(AVATAR_BUCKET).remove([oldPath])
+          .catch(err => console.warn('Impossible de supprimer l\'ancien avatar :', err.message));
+      }
     }
 
-    // Mise à jour de la table 'profiles' dans Supabase
     const { error } = await sb
       .from('profiles')
       .upsert(updates, { onConflict: 'id' });
@@ -213,12 +246,10 @@ async function saveProfile(event) {
 
     currentProfile = { ...currentProfile, ...updates };
 
-    // Mise à jour visuelle instantanée
     document.getElementById('profilNomDisplay').textContent = currentProfile.full_name;
     document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
     renderAvatar(currentProfile.avatar_url);
-    
-    // Sauvegarder la devise dans localStorage pour les autres pages
+
     localStorage.setItem('afima_currency', updates.currency);
 
     showMsg('Profil mis à jour avec succès.', 'success');
@@ -231,8 +262,8 @@ async function saveProfile(event) {
 }
 
 function logout() {
-  sb.auth.signOut().then(() => { 
-    window.location.href = '../index.html'; 
+  sb.auth.signOut().then(() => {
+    window.location.href = '../index.html';
   });
 }
 
@@ -281,7 +312,6 @@ function initVendeurModal() {
 
   btnOpen?.addEventListener('click', () => {
     modal.classList.remove('hidden');
-    // Pré-remplir avec les données existantes
     document.getElementById('vendeurNom').value = document.getElementById('profilNom').value || '';
     document.getElementById('vendeurTel').value = document.getElementById('profilTel').value || '';
     document.getElementById('vendeurVille').value = document.getElementById('profilVille').value || '';
@@ -303,6 +333,12 @@ function initVendeurModal() {
       city: document.getElementById('vendeurVille').value.trim() || null,
       updated_at: new Date().toISOString()
     };
+
+    if (!updates.full_name || !updates.phone) {
+      showMsg('Nom et téléphone sont obligatoires pour devenir vendeur.', 'error');
+      btn.disabled = false;
+      return;
+    }
 
     const { error } = await sb.from('profiles').upsert(updates, { onConflict: 'id' });
 

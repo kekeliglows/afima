@@ -2,6 +2,16 @@ const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // ── HAMBURGER ──
 const navToggle  = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
@@ -24,11 +34,16 @@ document.addEventListener('click', e => {
 function fmt(n) { return Currency.formatPrice(n); }
 
 const STATUTS = {
-  confirmee: { label: 'Confirmée',   icon: 'check-circle', css: 'statut-confirmee' },
-  en_cours:  { label: 'En cours',    icon: 'truck',        css: 'statut-en-cours'  },
-  livree:    { label: 'Livrée',      icon: 'package-check',css: 'statut-livree'    },
-  annulee:   { label: 'Annulée',     icon: 'x-circle',     css: 'statut-annulee'   },
+  en_attente_paiement: { label: 'En attente de paiement', icon: 'clock',        css: 'statut-attente'   },
+  confirmee:            { label: 'Confirmée',              icon: 'check-circle', css: 'statut-confirmee' },
+  en_cours:             { label: 'En cours',                icon: 'truck',        css: 'statut-en-cours'  },
+  livree:                { label: 'Livrée',                  icon: 'package-check',css: 'statut-livree'    },
+  annulee:               { label: 'Annulée',                 icon: 'x-circle',     css: 'statut-annulee'   },
 };
+const STATUT_INCONNU = { label: 'Statut inconnu', icon: 'help-circle', css: 'statut-inconnu' };
+
+// Commandes pour lesquelles il est pertinent de proposer un avis
+const STATUTS_AVIS_AUTORISE = new Set(['confirmee', 'en_cours', 'livree']);
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -38,7 +53,6 @@ async function init() {
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  // Badge panier
   const cart = JSON.parse(localStorage.getItem('afima_cart') || '[]');
   const total = cart.reduce((s, i) => s + i.qty, 0);
   const badge = document.getElementById('cartBadge');
@@ -56,11 +70,10 @@ async function loadCommandes(userId) {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  // Supprimer skeleton
   document.getElementById('cmdSkeleton')?.remove();
 
   if (error) {
-    list.innerHTML = `<p style="color:#dc2626;font-weight:600;padding:20px">Erreur : ${error.message}</p>`;
+    list.innerHTML = `<p style="color:#dc2626;font-weight:600;padding:20px">Erreur : ${escapeHtml(error.message)}</p>`;
     return;
   }
 
@@ -78,28 +91,31 @@ async function loadCommandes(userId) {
   }
 
   list.innerHTML = data.map(cmd => {
-    const statut = STATUTS[cmd.statut] || STATUTS.confirmee;
+    const statut = STATUTS[cmd.statut] || STATUT_INCONNU;
     const date   = new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
     const items  = cmd.commande_items || [];
+    const avisAutorise = STATUTS_AVIS_AUTORISE.has(cmd.statut);
 
-    const itemsHtml = items.map(item => `
+    const itemsHtml = items.map(item => {
+      const titreSafe = escapeHtml(item.titre);
+      return `
       <div class="commande-item">
         <img class="commande-item-img"
-             src="${item.image_url || 'https://placehold.co/56x56/f3f4f6/9ca3af?text=?'}"
-             alt="${item.titre}" loading="lazy">
+             src="${escapeHtml(item.image_url || 'https://placehold.co/56x56/f3f4f6/9ca3af?text=?')}"
+             alt="${titreSafe}" loading="lazy">
         <div class="commande-item-info">
-          <p class="commande-item-titre">${item.titre}</p>
+          <p class="commande-item-titre">${titreSafe}</p>
           <p class="commande-item-detail">Qté : ${item.quantite} × ${fmt(item.prix_unitaire)}</p>
         </div>
-        <button class="btn-review" type="button" onclick="window.location.href='produit.html?id=${item.produit_id}&review=1'">Laisser un avis</button>
+        ${avisAutorise ? `<button class="btn-review" type="button" onclick="window.location.href='produit.html?id=${encodeURIComponent(item.produit_id)}&review=1'">Laisser un avis</button>` : ''}
         <span class="commande-item-prix">${fmt(item.prix_unitaire * item.quantite)}</span>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     return `
       <div class="commande-card">
         <div class="commande-header">
-          <span class="commande-id">#${cmd.id.slice(0, 8).toUpperCase()}</span>
+          <span class="commande-id">#${escapeHtml(cmd.id.slice(0, 8).toUpperCase())}</span>
           <span class="commande-date">
             <i data-lucide="calendar"></i> ${date}
           </span>

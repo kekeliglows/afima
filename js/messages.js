@@ -24,9 +24,10 @@ async function initMessages() {
 }
 
 async function loadConversations() {
+  // Uniquement les colonnes affichées — pas toute la ligne "profiles"
   const { data, error } = await sb
     .from('messages')
-    .select(`*, sender:sender_id(*), recipient:recipient_id(*)`)
+    .select(`*, sender:sender_id(id, nom, avatar_url), recipient:recipient_id(id, nom, avatar_url)`)
     .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
     .order('created_at', { ascending: false });
 
@@ -59,6 +60,13 @@ async function loadConversations() {
   }).sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
 
   renderConversations(conversations);
+
+  // Si une conversation est déjà ouverte, on rafraîchit son état
+  // (nouveaux messages reçus en temps réel)
+  if (activeConversation) {
+    const refreshed = conversations.find(c => c.otherId === activeConversation.otherId);
+    if (refreshed) { activeConversation = refreshed; renderChat(); }
+  }
 }
 
 function renderConversations(list) {
@@ -77,12 +85,16 @@ function renderConversations(list) {
 
   container.innerHTML = list.map(conv => {
     const activeClass = activeConversation?.otherId === conv.otherId ? 'active' : '';
+    const nameSafe = escapeHtml(conv.otherName);
+    const avatarHtml = conv.otherAvatar
+      ? `<img src="${escapeHtml(conv.otherAvatar)}" alt="Avatar">`
+      : escapeHtml(conv.otherName.slice(0, 2).toUpperCase());
     return `
-      <div class="conv-item ${activeClass}" data-id="${conv.otherId}" tabindex="0">
-        <div class="conv-avatar">${conv.otherAvatar ? `<img src="${conv.otherAvatar}" alt="Avatar">` : conv.otherName.slice(0,2).toUpperCase()}</div>
+      <div class="conv-item ${activeClass}" data-id="${escapeHtml(conv.otherId)}" tabindex="0">
+        <div class="conv-avatar">${avatarHtml}</div>
         <div class="conv-info">
-          <div class="conv-name">${conv.otherName}</div>
-          <div class="conv-last">${conv.lastMessage || 'Démarrez la conversation.'}</div>
+          <div class="conv-name">${nameSafe}</div>
+          <div class="conv-last">${escapeHtml(conv.lastMessage || 'Démarrez la conversation.')}</div>
         </div>
         <div class="conv-meta">
           <span class="conv-time">${formatTime(conv.lastDate)}</span>
@@ -102,11 +114,27 @@ function filterConversations(event) {
   renderConversations(filtered);
 }
 
-function selectConversation(otherId) {
+async function selectConversation(otherId) {
   activeConversation = conversations.find(conv => conv.otherId === otherId);
   if (!activeConversation) return;
   renderChat();
   switchChat(otherId);
+  await markAsRead(otherId);
+}
+
+async function markAsRead(otherId) {
+  const unreadIds = (activeConversation?.messages || [])
+    .filter(m => m.recipient_id === currentUserId && !m.read)
+    .map(m => m.id);
+
+  if (unreadIds.length === 0) return;
+
+  const { error } = await sb.from('messages').update({ read: true }).in('id', unreadIds);
+  if (error) { console.warn('Impossible de marquer les messages comme lus :', error.message); return; }
+
+  activeConversation.messages.forEach(m => { if (unreadIds.includes(m.id)) m.read = true; });
+  activeConversation.unread = 0;
+  renderConversations(conversations);
 }
 
 function switchChat(otherId) {
@@ -126,10 +154,11 @@ function renderChat() {
   if (!activeConversation) return;
   document.getElementById('chatTopbarName').textContent = activeConversation.otherName;
   document.getElementById('chatTopbarSub').textContent = 'Dernier message le ' + formatDate(activeConversation.lastDate);
-  if (activeConversation.otherAvatar) {
-    const avatarEl = document.getElementById('chatTopbarAvatar');
-    avatarEl.innerHTML = `<img src="${activeConversation.otherAvatar}" alt="Avatar">`;
-  }
+
+  const avatarEl = document.getElementById('chatTopbarAvatar');
+  avatarEl.innerHTML = activeConversation.otherAvatar
+    ? `<img src="${escapeHtml(activeConversation.otherAvatar)}" alt="Avatar">`
+    : '';
 
   document.getElementById('chatTopbarProduct').classList.add('hidden');
   const messagesContainer = document.getElementById('chatMessages');
@@ -152,6 +181,10 @@ async function sendMessage(event) {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
   if (!text) return;
+  if (text.length > 1000) {
+    alert('Message trop long (1000 caractères maximum).');
+    return;
+  }
 
   const otherId = activeConversation.otherId;
   const message = {
@@ -171,15 +204,20 @@ async function sendMessage(event) {
 }
 
 function subscribeRealtime() {
-  sb.channel('public:messages')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      const newMsg = payload.new;
-      if (!newMsg) return;
+  // Filtre côté serveur en plus de la RLS (défense en profondeur) :
+  // deux abonnements car postgres_changes ne permet qu'un filtre par canal.
+  sb.channel('messages-recues')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `recipient_id=eq.${currentUserId}`
+    }, () => loadConversations())
+    .subscribe();
 
-      if (newMsg.sender_id === currentUserId || newMsg.recipient_id === currentUserId) {
-        loadConversations();
-      }
-    })
+  sb.channel('messages-envoyees')
+    .on('postgres_changes', {
+      event: 'INSERT', schema: 'public', table: 'messages',
+      filter: `sender_id=eq.${currentUserId}`
+    }, () => loadConversations())
     .subscribe();
 }
 
@@ -218,7 +256,8 @@ function formatDate(value) {
 }
 
 function escapeHtml(str) {
-  return str.replace(/[&<>"']/g, (tag) => ({
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, (tag) => ({
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -226,3 +265,5 @@ function escapeHtml(str) {
     "'": '&#39;'
   }[tag]));
 }
+
+init: (() => {})(); // placeholder retiré — voir note ci-dessous

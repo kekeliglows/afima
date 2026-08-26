@@ -3,6 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // ── COMPTEUR DE STATS ANIMÉ ──
   document.querySelectorAll('.stat-num').forEach(el => {
     const target = parseInt(el.dataset.target);
@@ -65,8 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     { min: 7,  max: 99, color: '#22c55e', label: 'Fort',         width: '100%' },
   ];
 
-  pwInput?.addEventListener('input', () => {
-    const v = pwInput.value;
+  function computePasswordScore(v) {
     let score = 0;
     if (v.length >= 8)              score++;
     if (v.length >= 12)             score++;
@@ -75,7 +84,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (/[0-9]/.test(v))            score++;
     if (/[^A-Za-z0-9]/.test(v))     score++;
     if (v.length >= 6)              score++;
+    return score;
+  }
 
+  pwInput?.addEventListener('input', () => {
+    const v = pwInput.value;
+    const score = computePasswordScore(v);
     const lvl = levels.find(l => score >= l.min && score <= l.max) || levels[0];
     pwBar.style.width    = v.length ? lvl.width : '0%';
     pwBar.style.background = lvl.color;
@@ -99,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const messageBox = document.getElementById('auth-message');
 
   function showMessage(text, isError = true) {
-    messageBox.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}"></i> ${text}`;
+    messageBox.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}"></i> ${escapeHtml(text)}`;
     messageBox.className = `message-box ${isError ? 'error' : 'success'}`;
     lucide.createIcons();
   }
@@ -117,10 +131,10 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Connexion...</span>';
     lucide.createIcons();
 
-    const { error } = await client.auth.signInWithPassword({
-      email:    document.getElementById('loginEmail').value,
-      password: document.getElementById('loginPassword').value,
-    });
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    const { error } = await client.auth.signInWithPassword({ email, password });
 
     if (error) {
       showMessage(error.message);
@@ -128,6 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.innerHTML = '<span>Se connecter</span><i data-lucide="arrow-right"></i>';
       lucide.createIcons();
     } else {
+      // Si un rôle "vendeur" avait été choisi lors d'une inscription
+      // précédente mais n'avait pas pu être sauvegardé (email pas encore
+      // confirmé à ce moment-là), on l'applique maintenant.
+      await applyPendingProfileIfAny(client);
+
       showMessage('Connexion réussie ! Redirection...', false);
       setTimeout(() => window.location.href = 'catalogue.html', 900);
     }
@@ -140,8 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const role = document.querySelector('input[name="userRole"]:checked').value;
     const isVendeur = role === 'vendeur';
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
 
-    // Validation des champs vendeur
+    if (computePasswordScore(password) < 3) {
+      showMessage('Mot de passe trop faible : utilisez au moins 8 caractères avec majuscules, chiffres ou symboles.');
+      return;
+    }
+
     if (isVendeur) {
       const nom = document.getElementById('signupNom').value.trim();
       const tel = document.getElementById('signupTel').value.trim();
@@ -154,10 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Création...</span>';
     lucide.createIcons();
 
-    const { data, error } = await client.auth.signUp({
-      email:    document.getElementById('signupEmail').value,
-      password: document.getElementById('signupPassword').value,
-    });
+    const { data, error } = await client.auth.signUp({ email, password });
 
     if (error) {
       showMessage(error.message);
@@ -167,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Création du profil avec le rôle et la devise
     if (data.user) {
       const profileData = {
         id: data.user.id,
@@ -178,7 +199,15 @@ document.addEventListener('DOMContentLoaded', () => {
         currency: document.getElementById('signupCurrency').value
       };
 
-      await client.from('profiles').upsert(profileData, { onConflict: 'id' });
+      const { error: profileError } = await client.from('profiles').upsert(profileData, { onConflict: 'id' });
+
+      if (profileError) {
+        // Pas de session active (confirmation email requise) → la policy
+        // RLS bloque l'écriture. On garde les infos en local pour les
+        // appliquer automatiquement à la première connexion réussie.
+        console.warn('Profil pas encore enregistrable (confirmation email en attente) :', profileError.message);
+        localStorage.setItem('afima_pending_profile', JSON.stringify(profileData));
+      }
     }
 
     showMessage('Compte créé ! Vérifiez votre boîte mail.', false);
@@ -192,6 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
     lucide.createIcons();
   });
+
   // ══ BOUTON SE CONNECTER AVEC GOOGLE ══
   const btnGoogle = document.getElementById('btn-google');
 
@@ -216,3 +246,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Applique un profil "vendeur" en attente, sauvegardé localement lors
+// d'une inscription dont l'écriture avait été bloquée par la RLS
+// (session pas encore active à ce moment-là).
+async function applyPendingProfileIfAny(client) {
+  const raw = localStorage.getItem('afima_pending_profile');
+  if (!raw) return;
+
+  try {
+    const pending = JSON.parse(raw);
+    const { data: { session } } = await client.auth.getSession();
+    if (!session || session.user.id !== pending.id) {
+      localStorage.removeItem('afima_pending_profile');
+      return;
+    }
+    const { error } = await client.from('profiles').upsert(pending, { onConflict: 'id' });
+    if (!error) localStorage.removeItem('afima_pending_profile');
+  } catch {
+    localStorage.removeItem('afima_pending_profile');
+  }
+}

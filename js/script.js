@@ -41,7 +41,6 @@ navToggle?.addEventListener('click', () => {
   navToggle.setAttribute('aria-expanded', String(!isOpen));
 });
 
-// Fermer le menu si on clique en dehors
 document.addEventListener('click', (e) => {
   if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
     if (!navToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
@@ -66,12 +65,14 @@ if (btnGetStarted) {
 // ── PAGE AJOUTER PRODUIT ──
 const form = document.getElementById('produitForm');
 if (form) {
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const MAX_IMAGE_SIZE = 8 * 1024 * 1024; // 8 Mo
+
   // Protection de route
   supabaseClient.auth.getSession().then(({ data: { session } }) => {
     if (!session) window.location.href = 'login.html';
   });
 
-  // Déconnexion desktop + mobile
   const logout = async () => {
     await supabaseClient.auth.signOut();
     window.location.href = '../index.html';
@@ -79,7 +80,6 @@ if (form) {
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  // Preview image
   const photoFile = document.getElementById('photoFile');
   const photoUrl  = document.getElementById('photoUrlInput');
   const preview   = document.getElementById('imagePreview');
@@ -96,9 +96,40 @@ if (form) {
     }
   }
 
+  function sanitizeFileName(name) {
+    return name
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
+      .replace(/[^a-zA-Z0-9._-]/g, '_')                    // remplace le reste
+      .slice(-100);                                        // évite les noms trop longs
+  }
+
+  function isLikelyImageUrl(url) {
+    try {
+      const parsed = new URL(url);
+      if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+      return /\.(jpe?g|png|gif|webp|avif)(\?.*)?$/i.test(parsed.pathname);
+    } catch {
+      return false;
+    }
+  }
+
   photoFile?.addEventListener('change', () => {
     const file = photoFile.files[0];
-    if (file) { photoUrl.value = ''; showPreview(URL.createObjectURL(file)); }
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      alert('Format non supporté. Utilisez une image JPG, PNG, WEBP ou GIF.');
+      photoFile.value = '';
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      alert('Image trop lourde (8 Mo maximum).');
+      photoFile.value = '';
+      return;
+    }
+
+    photoUrl.value = '';
+    showPreview(URL.createObjectURL(file));
   });
 
   photoUrl?.addEventListener('input', () => {
@@ -107,15 +138,44 @@ if (form) {
     else showPreview(null);
   });
 
-  // Soumission
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const file      = photoFile.files[0];
-    const directUrl = photoUrl.value.trim();
+    const titre       = document.getElementById('titre').value.trim();
+    const description  = document.getElementById('description').value.trim();
+    const prixInput    = document.getElementById('prix').value;
+    const stockInput   = document.getElementById('stock').value;
+    const file         = photoFile.files[0];
+    const directUrl    = photoUrl.value.trim();
+
+    // ── Validation manuelle (le formulaire a "novalidate") ──
+    if (!titre || titre.length > 150) {
+      alert('Le titre est obligatoire (150 caractères maximum).');
+      return;
+    }
+    if (!description || description.length > 2000) {
+      alert('La description est obligatoire (2000 caractères maximum).');
+      return;
+    }
+
+    const prix = Number(prixInput);
+    if (!Number.isFinite(prix) || !Number.isInteger(prix) || prix < 0) {
+      alert('Le prix doit être un nombre entier positif (pas de centimes).');
+      return;
+    }
+
+    const stock = parseInt(stockInput, 10);
+    if (!Number.isInteger(stock) || stock < 1) {
+      alert('La quantité doit être un nombre entier d\'au moins 1.');
+      return;
+    }
 
     if (!file && !directUrl) {
       alert("Veuillez choisir une photo ou coller l'URL d'une image.");
+      return;
+    }
+    if (directUrl && !isLikelyImageUrl(directUrl)) {
+      alert("L'URL fournie ne semble pas pointer vers une image (jpg, png, webp, gif).");
       return;
     }
 
@@ -128,7 +188,7 @@ if (form) {
       let finalImageUrl = directUrl;
 
       if (file) {
-        const fileName = Date.now() + '_' + file.name;
+        const fileName = `${Date.now()}_${sanitizeFileName(file.name)}`;
         const { error: storageError } = await supabaseClient.storage
           .from('photos-produits').upload(fileName, file);
         if (storageError) throw storageError;
@@ -139,15 +199,13 @@ if (form) {
       }
 
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
-      const prixSaisi = Number(document.getElementById('prix').value);
-      const prix = Number.isFinite(prixSaisi) ? prixSaisi : 0;
-      
+
       const { error: dbError } = await supabaseClient.from('produits').insert([{
         user_id:     currentSession.user.id,
-        titre:       document.getElementById('titre').value,
-        description: document.getElementById('description').value,
+        titre,
+        description,
         prix,
-        stock:       parseInt(document.getElementById('stock').value),
+        stock,
         image_url:   finalImageUrl
       }]);
 
