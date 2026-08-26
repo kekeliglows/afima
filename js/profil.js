@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initProfile() {
   const profileLoader = document.getElementById('profileLoader');
+  await applyPendingProfileIfAny(sb); // même fonction que dans login.js, à dupliquer ou factoriser
 
   try {
     const { data: { session } } = await sb.auth.getSession();

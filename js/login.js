@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
+  const PRODUCTION_URL = 'https://afima-ruby.vercel.app';
+  const EMAIL_CONFIRMATION_URL = `${PRODUCTION_URL}/front-end/signup.html?confirmed=1`;
+  const RESEND_COOLDOWN_MS = 30 * 1000;
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   function escapeHtml(str) {
@@ -35,22 +38,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const subtitle    = document.getElementById('auth-subtitle');
 
   function switchTab(toLogin) {
-    tabLogin.classList.toggle('active', toLogin);
-    tabSignup.classList.toggle('active', !toLogin);
-    indicator.classList.toggle('right', !toLogin);
+    tabLogin?.classList.toggle('active', toLogin);
+    tabSignup?.classList.toggle('active', !toLogin);
+    indicator?.classList.toggle('right', !toLogin);
 
-    loginForm.classList.toggle('active', toLogin);
-    signupForm.classList.toggle('active', !toLogin);
+    loginForm?.classList.toggle('active', toLogin);
+    signupForm?.classList.toggle('active', !toLogin);
 
-    subtitle.textContent = toLogin
-      ? 'Connectez-vous pour continuer sur afima.'
-      : 'Créez votre compte gratuitement.';
+    if (subtitle) {
+      subtitle.textContent = toLogin
+        ? 'Connectez-vous pour continuer sur afima.'
+        : 'Créez votre compte gratuitement.';
+    }
 
+    if (!toLogin) setLoginVerification(false);
     hideMessage();
   }
 
-  tabLogin.addEventListener('click',  () => switchTab(true));
-  tabSignup.addEventListener('click', () => switchTab(false));
+  tabLogin?.addEventListener('click',  () => switchTab(true));
+  tabSignup?.addEventListener('click', () => switchTab(false));
 
   // ── SHOW / HIDE PASSWORD ──
   document.querySelectorAll('.toggle-pw').forEach(btn => {
@@ -111,6 +117,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── MESSAGES ──
   const messageBox = document.getElementById('auth-message');
+  const authBox = document.querySelector('.auth-box');
+  const confirmationPanel = document.getElementById('confirmationPanel');
+  const confirmationEmail = document.getElementById('confirmationEmail');
+  const loginVerification = document.getElementById('loginVerification');
+  const resendButton = document.getElementById('btnResend');
+  const loginResendButton = document.getElementById('btnLoginResend');
+  const resendCooldown = document.getElementById('resendCooldown');
+  let resendEmail = '';
+  let resendTimer;
+
+  function friendlyAuthError(error) {
+    const message = (error?.message || '').toLowerCase();
+    if (message.includes('already registered') || message.includes('already been registered') || message.includes('user already')) {
+      return 'Cette adresse e-mail est déjà utilisée. Connectez-vous ou utilisez une autre adresse.';
+    }
+    if (message.includes('invalid email') || message.includes('email address')) return 'Veuillez saisir une adresse e-mail valide.';
+    if (message.includes('password') && (message.includes('weak') || message.includes('short') || message.includes('characters'))) {
+      return 'Mot de passe invalide : utilisez au moins 6 caractères, dont un mot de passe suffisamment complexe.';
+    }
+    if (message.includes('network') || message.includes('fetch')) return 'La connexion au service est impossible. Vérifiez votre réseau puis réessayez.';
+    if (message.includes('rate limit')) return 'Trop de demandes. Patientez quelques instants avant de réessayer.';
+    if (message.includes('expired') || message.includes('invalid') && message.includes('token')) return 'Ce lien de confirmation est invalide ou a expiré. Demandez un nouvel e-mail.';
+    return 'Une erreur est survenue. Veuillez réessayer dans quelques instants.';
+  }
 
   function showMessage(text, isError = true) {
     messageBox.innerHTML = `<i data-lucide="${isError ? 'alert-circle' : 'check-circle'}"></i> ${escapeHtml(text)}`;
@@ -122,8 +152,82 @@ document.addEventListener('DOMContentLoaded', () => {
     messageBox.className = 'message-box hidden';
   }
 
+  function setLoginVerification(visible) {
+    loginVerification?.classList.toggle('hidden', !visible);
+  }
+
+  function getResendCooldownKey(email) {
+    return `afima_confirmation_resend_after_${email.toLowerCase()}`;
+  }
+
+  function startResendCooldown(until = Date.now() + RESEND_COOLDOWN_MS) {
+    if (resendEmail) localStorage.setItem(getResendCooldownKey(resendEmail), String(until));
+    [resendButton, loginResendButton].forEach(button => { if (button) button.disabled = true; });
+    clearInterval(resendTimer);
+    const update = () => {
+      const remaining = Math.ceil((until - Date.now()) / 1000);
+      if (resendCooldown) resendCooldown.textContent = `Vous pourrez renvoyer l'e-mail dans ${remaining}s.`;
+      if (remaining <= 0) {
+        clearInterval(resendTimer);
+        [resendButton, loginResendButton].forEach(button => { if (button) button.disabled = false; });
+        if (resendCooldown) resendCooldown.textContent = '';
+        if (resendEmail) localStorage.removeItem(getResendCooldownKey(resendEmail));
+      }
+    };
+    update();
+    resendTimer = setInterval(update, 1000);
+  }
+
+  async function resendConfirmation() {
+    if (!resendEmail) return;
+    [resendButton, loginResendButton].forEach(button => { if (button) button.disabled = true; });
+    let result;
+    try {
+      result = await client.auth.resend({
+        type: 'signup',
+        email: resendEmail,
+        options: { emailRedirectTo: EMAIL_CONFIRMATION_URL }
+      });
+    } catch (error) {
+      showMessage(friendlyAuthError(error));
+      [resendButton, loginResendButton].forEach(button => { if (button) button.disabled = false; });
+      return;
+    }
+    const { error } = result;
+    if (error) {
+      showMessage(error.message.toLowerCase().includes('confirmed')
+        ? 'Cette adresse e-mail est déjà confirmée. Vous pouvez vous connecter.'
+        : friendlyAuthError(error));
+      [resendButton, loginResendButton].forEach(button => { if (button) button.disabled = false; });
+      return;
+    }
+    showMessage('Un nouvel e-mail de confirmation vient d’être envoyé.', false);
+    startResendCooldown();
+  }
+
+  function showConfirmationScreen(email) {
+    resendEmail = email;
+    confirmationEmail.textContent = email;
+    confirmationPanel.classList.remove('hidden');
+    authBox.classList.add('confirmation-mode');
+    hideMessage();
+    const resendAfter = Number(localStorage.getItem(getResendCooldownKey(email)));
+    if (resendAfter > Date.now()) startResendCooldown(resendAfter);
+    else startResendCooldown();
+    lucide.createIcons();
+  }
+
+  resendButton?.addEventListener('click', resendConfirmation);
+  loginResendButton?.addEventListener('click', resendConfirmation);
+  document.getElementById('btnEditEmail')?.addEventListener('click', () => {
+    authBox.classList.remove('confirmation-mode');
+    confirmationPanel.classList.add('hidden');
+    switchTab(false);
+    document.getElementById('signupEmail').focus();
+  });
+
   // ── CONNEXION ──
-  loginForm.addEventListener('submit', async e => {
+  loginForm?.addEventListener('submit', async e => {
     e.preventDefault();
     hideMessage();
     const btn = document.getElementById('btnLogin');
@@ -134,14 +238,42 @@ document.addEventListener('DOMContentLoaded', () => {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
 
-    const { error } = await client.auth.signInWithPassword({ email, password });
+    if (!email || !document.getElementById('loginEmail').validity.valid) {
+      showMessage('Veuillez saisir une adresse e-mail valide.');
+      btn.disabled = false;
+      btn.innerHTML = '<span>Se connecter</span><i data-lucide="arrow-right"></i>';
+      lucide.createIcons();
+      return;
+    }
+
+    let result;
+    try {
+      result = await client.auth.signInWithPassword({ email, password });
+    } catch (error) {
+      showMessage(friendlyAuthError(error));
+      btn.disabled = false;
+      btn.innerHTML = '<span>Se connecter</span><i data-lucide="arrow-right"></i>';
+      lucide.createIcons();
+      return;
+    }
+    const { error } = result;
 
     if (error) {
-      showMessage(error.message);
+      const notConfirmed = error.code === 'email_not_confirmed' || error.message.toLowerCase().includes('email not confirmed');
+      showMessage(notConfirmed
+        ? 'Votre adresse e-mail n\'est pas encore confirmée.'
+        : friendlyAuthError(error));
+      setLoginVerification(notConfirmed);
+      if (notConfirmed) {
+        resendEmail = email;
+        const resendAfter = Number(localStorage.getItem(getResendCooldownKey(email)));
+        if (resendAfter > Date.now()) startResendCooldown(resendAfter);
+      }
       btn.disabled = false;
       btn.innerHTML = '<span>Se connecter</span><i data-lucide="arrow-right"></i>';
       lucide.createIcons();
     } else {
+      setLoginVerification(false);
       // Si un rôle "vendeur" avait été choisi lors d'une inscription
       // précédente mais n'avait pas pu être sauvegardé (email pas encore
       // confirmé à ce moment-là), on l'applique maintenant.
@@ -153,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ── INSCRIPTION ──
-  signupForm.addEventListener('submit', async e => {
+  signupForm?.addEventListener('submit', async e => {
     e.preventDefault();
     hideMessage();
 
@@ -161,6 +293,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const isVendeur = role === 'vendeur';
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPassword').value;
+    const passwordConfirmation = document.getElementById('signupPasswordConfirm').value;
+    const acceptedTerms = document.getElementById('signupTerms').checked;
+
+    if (!email || !document.getElementById('signupEmail').validity.valid) {
+      showMessage('Veuillez saisir une adresse e-mail valide.');
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      showMessage('Les deux mots de passe ne correspondent pas.');
+      document.getElementById('signupPasswordConfirm').focus();
+      return;
+    }
+
+    if (!acceptedTerms) {
+      showMessage('Vous devez accepter les Conditions d’utilisation et la Politique de confidentialité pour créer votre compte.');
+      document.getElementById('signupTerms').focus();
+      return;
+    }
 
     if (computePasswordScore(password) < 3) {
       showMessage('Mot de passe trop faible : utilisez au moins 8 caractères avec majuscules, chiffres ou symboles.');
@@ -179,10 +330,32 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.innerHTML = '<i data-lucide="loader-2" class="spin"></i><span>Création...</span>';
     lucide.createIcons();
 
-    const { data, error } = await client.auth.signUp({ email, password });
+    let result;
+    try {
+      result = await client.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: EMAIL_CONFIRMATION_URL }
+      });
+    } catch (error) {
+      showMessage(friendlyAuthError(error));
+      btn.disabled = false;
+      btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
+      lucide.createIcons();
+      return;
+    }
+    const { data, error } = result;
 
     if (error) {
-      showMessage(error.message);
+      showMessage(friendlyAuthError(error));
+      btn.disabled = false;
+      btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
+      lucide.createIcons();
+      return;
+    }
+
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      showMessage('Cette adresse e-mail est déjà utilisée. Connectez-vous ou utilisez une autre adresse.');
       btn.disabled = false;
       btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
       lucide.createIcons();
@@ -210,17 +383,27 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    showMessage('Compte créé ! Vérifiez votre boîte mail.', false);
-    signupForm.reset();
-    pwBar.style.width = '0%';
-    pwLabel.textContent = '';
-    vendeurFields.classList.add('hidden');
-    document.querySelector('input[name="userRole"][value="acheteur"]').checked = true;
+    if (data.session) {
+      showMessage('Compte créé ! Redirection...', false);
+      setTimeout(() => window.location.href = 'catalogue.html', 900);
+    } else {
+      showConfirmationScreen(email);
+    }
 
     btn.disabled = false;
     btn.innerHTML = '<span>Créer mon compte</span><i data-lucide="arrow-right"></i>';
     lucide.createIcons();
   });
+
+  (async () => {
+    const { data: { session } } = await client.auth.getSession();
+    const params = new URLSearchParams(window.location.search);
+    if (session && params.get('confirmed') === '1') {
+      await applyPendingProfileIfAny(client);
+      showMessage('Votre adresse e-mail est confirmée ! Redirection...', false);
+      setTimeout(() => window.location.href = 'dashboard.html', 1200);
+    }
+  })().catch(error => console.warn('Retour de confirmation indisponible :', error));
 
   // ══ BOUTON SE CONNECTER AVEC GOOGLE ══
   const btnGoogle = document.getElementById('btn-google');
@@ -233,14 +416,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const { error } = await client.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: window.location.origin + '/html/profil.html'
+            redirectTo: window.location.origin + '/front-end/profil.html'
           }
         });
 
         if (error) throw error;
-      } catch (err) {
-        console.error('Erreur connexion Google :', err.message);
-        showMessage('Erreur Google : ' + err.message);
+    } catch (err) {
+      console.error('Erreur connexion Google :', err.message);
+        showMessage('La connexion avec Google a échoué. Vérifiez votre connexion puis réessayez.');
         btnGoogle.disabled = false;
       }
     });

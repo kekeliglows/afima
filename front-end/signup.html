@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Créer un compte — Afima</title>
+  <meta name="description" content="Créez votre compte Afima.">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/login.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/login.js" defer></script>
+</head>
+<body>
+  <main class="auth-right">
+    <a href="../index.html" class="back-link"><i data-lucide="arrow-left"></i> Retour à l'accueil</a>
+    <div class="auth-box">
+      <div class="auth-header"><h1>Créer un compte<span class="accent-dot">.</span></h1><p id="auth-subtitle">Rejoignez Afima gratuitement.</p></div>
+      <div id="auth-message" class="message-box hidden" role="alert" aria-live="polite"></div>
+      <section id="confirmationPanel" class="confirmation-panel hidden" aria-labelledby="confirmationTitle">
+        <div class="confirmation-icon" aria-hidden="true"><i data-lucide="mail-check"></i></div>
+        <h2 id="confirmationTitle">Vérifiez votre adresse e-mail</h2>
+        <p>Nous avons envoyé un lien de confirmation à</p><p class="confirmation-email" id="confirmationEmail"></p>
+        <p>Cliquez sur le lien reçu dans votre boîte mail pour activer votre compte Afima.</p>
+        <a class="submit-btn confirmation-mail-btn" href="https://mail.google.com/" target="_blank" rel="noopener"><span>Ouvrir ma boîte mail</span><i data-lucide="external-link"></i></a>
+        <p class="resend-label">Vous n'avez pas reçu l'e-mail ?</p><button type="button" class="resend-btn" id="btnResend">Renvoyer l'e-mail</button>
+        <button type="button" class="text-action" id="btnEditEmail">Modifier mon adresse e-mail</button><p class="cooldown-text" id="resendCooldown" aria-live="polite"></p>
+      </section>
+      <form id="signupForm" class="auth-form active" novalidate>
+        <div class="role-selector">
+          <label class="role-option"><input type="radio" name="userRole" value="acheteur" checked><span class="role-card"><i data-lucide="shopping-bag"></i><span class="role-title">Acheteur</span><span class="role-desc">Je souhaite acheter</span></span></label>
+          <label class="role-option"><input type="radio" name="userRole" value="vendeur"><span class="role-card"><i data-lucide="store"></i><span class="role-title">Vendeur</span><span class="role-desc">Je souhaite vendre</span></span></label>
+        </div>
+        <div id="vendeurFields" class="vendeur-fields hidden">
+          <div class="input-group"><label for="signupNom">Nom complet *</label><div class="input-wrap"><i data-lucide="user" class="input-icon"></i><input type="text" id="signupNom" autocomplete="name"></div></div>
+          <div class="input-group"><label for="signupTel">Téléphone *</label><div class="input-wrap"><i data-lucide="phone" class="input-icon"></i><input type="tel" id="signupTel" autocomplete="tel"></div></div>
+          <div class="input-group"><label for="signupVille">Ville</label><div class="input-wrap"><i data-lucide="map-pin" class="input-icon"></i><input type="text" id="signupVille"></div></div>
+        </div>
+        <div class="input-group"><label for="signupEmail">Adresse e-mail</label><div class="input-wrap"><i data-lucide="mail" class="input-icon"></i><input type="email" id="signupEmail" placeholder="votre@email.com" required autocomplete="email"></div></div>
+        <div class="input-group"><label for="signupCurrency">Devise préférée</label><div class="input-wrap"><i data-lucide="coins" class="input-icon"></i><select id="signupCurrency"><option value="EUR">€ Euro</option><option value="XOF">FCFA Franc CFA (Ouest)</option><option value="XAF">FCFA Franc CFA (Central)</option><option value="MAD">DH Dirham marocain</option><option value="NGN">₦ Naira nigérian</option><option value="GHS">₵ Cedi ghanéen</option><option value="USD">$ Dollar</option></select></div></div>
+        <div class="input-group"><label for="signupPassword">Mot de passe</label><div class="input-wrap"><i data-lucide="lock" class="input-icon"></i><input type="password" id="signupPassword" minlength="6" required autocomplete="new-password"><button type="button" class="toggle-pw" data-target="signupPassword" aria-label="Afficher le mot de passe"><i data-lucide="eye"></i></button></div><div class="pw-strength"><div class="pw-bar" id="pwBar"></div></div><span class="pw-label" id="pwLabel"></span></div>
+        <div class="input-group"><label for="signupPasswordConfirm">Confirmez votre mot de passe</label><div class="input-wrap"><i data-lucide="lock-keyhole" class="input-icon"></i><input type="password" id="signupPasswordConfirm" required autocomplete="new-password"><button type="button" class="toggle-pw" data-target="signupPasswordConfirm" aria-label="Afficher le mot de passe"><i data-lucide="eye"></i></button></div></div>
+        <label class="terms-check"><input type="checkbox" id="signupTerms" required><span>J'accepte les <a href="conditions-utilisation.html" target="_blank">Conditions d'utilisation</a> et la <a href="politique-confidentialite.html" target="_blank">Politique de confidentialité</a>.</span></label>
+        <button type="submit" class="submit-btn" id="btnSignup"><span>Créer mon compte</span><i data-lucide="arrow-right"></i></button>
+      </form>
+      <div class="auth-divider"><span>ou</span></div>
+      <button type="button" id="btn-google" class="btn-google"><img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18"><span>Continuer avec Google</span></button>
+      <p class="auth-footer-note">Vous avez déjà un compte ? <a href="login.html">Se connecter</a></p>
+    </div>
+  </main>
+  <script>lucide.createIcons();</script>
+</body>
+</html>
