@@ -53,8 +53,7 @@ async function init() {
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  const cart = JSON.parse(localStorage.getItem('afima_cart') || '[]');
-  const total = cart.reduce((s, i) => s + i.qty, 0);
+  const total = await Cart.getCartCount({ supabaseClient, userId: session.user.id });
   const badge = document.getElementById('cartBadge');
   if (badge && total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
 

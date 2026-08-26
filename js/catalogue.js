@@ -41,11 +41,12 @@ async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   currentUserId = session?.user?.id || null;
 
-  // Badge panier
-  const cart  = JSON.parse(localStorage.getItem('afima_cart') || '[]');
-  const total = cart.reduce((s, i) => s + i.qty, 0);
-  const badge = document.getElementById('cartBadge');
-  if (badge && total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
+  // Badge panier (uniquement si connecté : le panier vit côté serveur)
+  if (currentUserId) {
+    const total = await Cart.getCartCount({ supabaseClient, userId: currentUserId });
+    const badge = document.getElementById('cartBadge');
+    if (badge && total > 0) { badge.textContent = total; badge.classList.remove('hidden'); }
+  }
 
   await loadProduits();
   await loadWishlist();

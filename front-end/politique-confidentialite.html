@@ -22,11 +22,19 @@
 
   <main class="legal-container">
     <h1>Politique de Confidentialité</h1>
-    <p class="legal-date">Dernière mise à jour : 2026</p>
+    <p class="legal-date">Dernière mise à jour : 26 août 2026</p>
 
     <section>
       <h2>1. Collecte des données</h2>
-      <p>Nous collectons les informations que vous nous fournissez lors de votre inscription ou de la mise à jour de votre profil (nom, email, photo d'avatar).</p>
+      <p>Nous collectons les informations que vous nous fournissez directement, ainsi que certaines données générées automatiquement lors de l'utilisation de la plateforme :</p>
+      <ul>
+        <li><strong>Compte et profil :</strong> nom complet, adresse email, mot de passe (haché), numéro de téléphone, ville, biographie, photo d'avatar, devise préférée.</li>
+        <li><strong>Activité vendeur :</strong> informations complémentaires fournies pour devenir vendeur (nom, téléphone, ville), produits publiés, statistiques de vente.</li>
+        <li><strong>Commandes et transactions :</strong> historique des commandes, adresses de livraison, montants, statut des paiements et retraits.</li>
+        <li><strong>Messagerie :</strong> messages échangés entre acheteurs et vendeurs via la messagerie intégrée d'Afima.</li>
+        <li><strong>Données techniques :</strong> fuseau horaire de votre appareil et, à défaut, une estimation approximative de votre pays via votre adresse IP, utilisée uniquement pour pré-remplir la devise et l'indicatif téléphonique.</li>
+        <li><strong>Vérification vendeur :</strong> documents d'identité et informations bancaires, uniquement lorsque ces fonctionnalités sont activées sur votre compte.</li>
+      </ul>
     </section>
 
     <section>
@@ -34,14 +42,17 @@
       <p>Vos données sont utilisées exclusivement pour :</p>
       <ul>
         <li>Gérer votre compte utilisateur et vos accès.</li>
-        <li>Permettre l'affichage de vos produits et votre profil d'avatar.</li>
-        <li>Assurer le bon fonctionnement des fonctionnalités de la plateforme.</li>
+        <li>Permettre l'affichage de vos produits et de votre profil d'avatar.</li>
+        <li>Traiter vos commandes, paiements, livraisons et éventuels retours.</li>
+        <li>Assurer la messagerie entre acheteurs et vendeurs.</li>
+        <li>Pré-remplir la devise et les informations de livraison selon votre pays estimé.</li>
+        <li>Assurer le bon fonctionnement, la sécurité et l'amélioration des fonctionnalités de la plateforme.</li>
       </ul>
     </section>
 
     <section>
       <h2>3. Stockage et Sécurité (Supabase)</h2>
-      <p>Vos données et vos fichiers (avatars) sont stockés de manière sécurisée via notre infrastructure de base de données Supabase. Aucune donnée personnelle n'est vendue ni cédée à des tiers.</p>
+      <p>Vos données et vos fichiers (avatars, images de produits) sont stockés de manière sécurisée via notre infrastructure de base de données Supabase. Aucune donnée personnelle n'est vendue ni cédée à des tiers.</p>
     </section>
 
     <section>
@@ -50,12 +61,23 @@
     </section>
 
     <section>
-      <h2>5. Cookies et suivi</h2>
-      <p>Afima utilise des cookies pour mémoriser vos préférences (devise, langue, statut de connexion). Ces cookies sont non-invasifs et nécessaires au fonctionnement de la plateforme. Vous pouvez désactiver les cookies dans les paramètres de votre navigateur, mais cela peut affecter l'expérience utilisateur.</p>
+      <h2>5. Stockage local et technologies similaires</h2>
+      <p>Afima n'utilise pas de cookies de suivi publicitaire. La plateforme utilise le stockage local de votre navigateur (« localStorage ») pour mémoriser, uniquement sur votre appareil :</p>
+      <ul>
+        <li>Vos adresses de livraison enregistrées.</li>
+        <li>Votre devise d'affichage préférée.</li>
+        <li>Votre liste de favoris (produits sauvegardés).</li>
+      </ul>
+      <p>Ces informations restent sur votre appareil. Votre panier, quant à lui, est enregistré de façon sécurisée sur nos serveurs et lié à votre compte : vous le retrouvez donc automatiquement d'un appareil à l'autre, et le vider n'efface pas vos données de navigation locales. Votre session de connexion est gérée de façon sécurisée par Supabase Auth.</p>
     </section>
 
     <section>
-      <h2>6. Partage de données avec des tiers</h2>
+      <h2>6. Géolocalisation</h2>
+      <p>Afima ne demande jamais l'accès à votre position GPS précise. Pour vous proposer automatiquement la devise et l'indicatif téléphonique adaptés à votre pays, nous déterminons une estimation de votre pays à partir du fuseau horaire configuré sur votre appareil et, en dernier recours, à partir de votre adresse IP via un service tiers (ipapi.co). Cette estimation reste approximative et vous pouvez à tout moment modifier manuellement votre pays, votre devise et votre ville dans votre profil.</p>
+    </section>
+
+    <section>
+      <h2>7. Partage de données avec des tiers</h2>
       <p>Nous ne vendons ni ne partageons vos données personnelles avec des tiers à des fins commerciales. Les seules exceptions sont :</p>
       <ul>
         <li>Les fournisseurs de paiement (pour traiter les transactions)</li>
@@ -65,18 +87,34 @@
     </section>
 
     <section>
-      <h2>7. Période de conservation des données</h2>
+      <h2>8. Nos prestataires techniques</h2>
+      <p>Pour faire fonctionner la plateforme, Afima s'appuie sur un nombre limité de prestataires techniques, qui agissent en tant que sous-traitants et n'utilisent vos données que pour le service qu'ils nous fournissent :</p>
+      <ul>
+        <li><strong>Supabase :</strong> hébergement de la base de données, authentification et stockage des fichiers (avatars, images de produits).</li>
+        <li><strong>Kkiapay :</strong> traitement sécurisé des paiements et retraits.</li>
+        <li><strong>ipapi.co :</strong> estimation du pays à partir de l'adresse IP, uniquement lorsque le fuseau horaire ne suffit pas à la déterminer (voir section 6).</li>
+        <li><strong>Google Fonts :</strong> chargement des polices de caractères utilisées sur le site.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>9. Transferts internationaux de données</h2>
+      <p>Afima s'adresse à des utilisateurs situés dans plusieurs pays d'Afrique de l'Ouest, d'Afrique centrale et au-delà. Notre hébergeur Supabase et nos autres prestataires techniques peuvent traiter et stocker vos données sur des serveurs situés en dehors de votre pays de résidence. Nous veillons à ce que ces prestataires appliquent des mesures de sécurité et de confidentialité adéquates.</p>
+    </section>
+
+    <section>
+      <h2>10. Période de conservation des données</h2>
       <p>Vos données sont conservées tant que votre compte est actif. Après suppression de votre compte, les données personnelles sont supprimées dans les 30 jours. Les enregistrements transactionnels sont conservés 7 ans pour conformité légale et audit.</p>
     </section>
 
     <section>
-      <h2>8. Sécurité des données</h2>
+      <h2>11. Sécurité des données</h2>
       <p>Afima utilise le chiffrement SSL/TLS pour tous les transferts de données. L'infrastructure est hébergée chez Supabase (Google Cloud). Des sauvegardes régulières sont effectuées pour éviter la perte de données. Vous êtes responsable de maintenir la confidentialité de votre mot de passe.</p>
     </section>
 
     <section>
-      <h2>9. Vos droits de données personnelles</h2>
-      <p>Conformément au RGPD et à la législation locale, vous disposez des droits suivants :</p>
+      <h2>12. Vos droits de données personnelles</h2>
+      <p>Conformément au RGPD (pour nos utilisateurs concernés) et à la législation locale applicable, vous disposez des droits suivants :</p>
       <ul>
         <li><strong>Droit d'accès :</strong> Consulter toutes vos données personnelles stockées</li>
         <li><strong>Droit de modification :</strong> Corriger vos informations personnelles</li>
@@ -84,11 +122,11 @@
         <li><strong>Droit à la portabilité :</strong> Recevoir vos données dans un format structuré</li>
         <li><strong>Droit d'opposition :</strong> Vous opposer au traitement de vos données</li>
       </ul>
-      <p>Pour exercer ces droits, contactez support@afima.app</p>
+      <p>Pour exercer ces droits, contactez support@afima.app. Nous nous engageons à répondre à votre demande dans un délai raisonnable.</p>
     </section>
 
     <section>
-      <h2>10. Données de transaction</h2>
+      <h2>13. Données de transaction</h2>
       <p>Afima enregistre l'historique complet de vos transactions (achat, vente, paiement, retrait) pour :</p>
       <ul>
         <li>Générer des factures et reçus</li>
@@ -100,12 +138,17 @@
     </section>
 
     <section>
-      <h2>11. Modifications de cette politique</h2>
+      <h2>14. Âge minimum et mineurs</h2>
+      <p>Afima s'adresse à des utilisateurs majeurs, ou mineurs légalement autorisés à conclure des transactions en ligne selon la législation de leur pays, avec l'accord d'un représentant légal le cas échéant. Nous ne collectons pas sciemment de données personnelles auprès d'enfants en dessous de l'âge de consentement numérique applicable. Si vous pensez qu'un mineur a créé un compte sans autorisation appropriée, contactez-nous à support@afima.app afin que nous puissions prendre les mesures nécessaires.</p>
+    </section>
+
+    <section>
+      <h2>15. Modifications de cette politique</h2>
       <p>Afima peut modifier sa politique de confidentialité à tout moment. Les modifications seront annoncées sur cette page avec une mise à jour de la date. L'utilisation continue de la plateforme après les modifications implique votre acceptation de la nouvelle politique.</p>
     </section>
 
     <section>
-      <h2>12. Contact et réclamations</h2>
+      <h2>16. Contact et réclamations</h2>
       <p>Pour toute question concernant cette politique de confidentialité ou pour signaler une violation, contactez :</p>
       <ul>
         <li>Email : support@afima.app</li>

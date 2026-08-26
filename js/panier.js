@@ -37,10 +37,8 @@ document.addEventListener('click', e => {
   }
 });
 
-// ── PANIER (localStorage reste OK : c'est juste une pré-sélection,
-// le prix/stock réels sont revérifiés côté serveur dans le RPC) ──
-function getCart() { return JSON.parse(localStorage.getItem('afima_cart') || '[]'); }
-function saveCart(cart) { localStorage.setItem('afima_cart', JSON.stringify(cart)); }
+// ── PANIER (stocké côté serveur dans panier_items, voir js/utils/cart.js) ──
+let currentUserId = null;
 function fmt(priceEUR) { return Currency.formatPrice(priceEUR); }
 
 function updateBadge(cart) {
@@ -51,8 +49,8 @@ function updateBadge(cart) {
   badge.classList.toggle('hidden', total === 0);
 }
 
-function renderCart() {
-  const cart = getCart();
+async function renderCart() {
+  const cart = await Cart.getCartItems({ supabaseClient, userId: currentUserId });
   const container = document.getElementById('panierItems');
   const empty     = document.getElementById('panierEmpty');
   const recap     = document.getElementById('panierRecap');
@@ -77,8 +75,8 @@ function renderCart() {
   recap.style.pointerEvents = '';
   btnCmd.disabled = false;
 
-  container.innerHTML = cart.map((item, idx) => `
-    <div class="panier-item" data-idx="${idx}">
+  container.innerHTML = cart.map((item) => `
+    <div class="panier-item" data-cart-id="${escapeHtml(item.cartItemId)}">
       <img class="panier-item-img"
            src="${escapeHtml(item.image_url || 'https://placehold.co/80x80/f3f4f6/9ca3af?text=?')}"
            alt="${escapeHtml(item.titre)}" loading="lazy">
@@ -88,16 +86,16 @@ function renderCart() {
       </div>
       <div class="panier-item-controls">
         <div class="qty-control">
-          <button type="button" data-action="minus" data-idx="${idx}" aria-label="Diminuer">
+          <button type="button" data-action="minus" data-cart-id="${escapeHtml(item.cartItemId)}" aria-label="Diminuer">
             <i data-lucide="minus"></i>
           </button>
           <span>${item.qty}</span>
-          <button type="button" data-action="plus" data-idx="${idx}" aria-label="Augmenter">
+          <button type="button" data-action="plus" data-cart-id="${escapeHtml(item.cartItemId)}" data-max="${item.stock}" aria-label="Augmenter">
             <i data-lucide="plus"></i>
           </button>
         </div>
         <span class="panier-item-total">${fmt(item.prix * item.qty)}</span>
-        <button class="btn-supprimer" data-action="remove" data-idx="${idx}" aria-label="Supprimer">
+        <button class="btn-supprimer" data-action="remove" data-cart-id="${escapeHtml(item.cartItemId)}" aria-label="Supprimer">
           <i data-lucide="trash-2"></i>
         </button>
       </div>
@@ -105,20 +103,27 @@ function renderCart() {
   `).join('');
 
   container.querySelectorAll('button[data-action]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const cart = getCart();
-      const idx  = parseInt(btn.dataset.idx);
-      if (btn.dataset.action === 'minus') {
-        if (cart[idx].qty > 1) cart[idx].qty--;
-        else cart.splice(idx, 1);
-      } else if (btn.dataset.action === 'plus') {
-        if (cart[idx].qty < cart[idx].stock) cart[idx].qty++;
-      } else if (btn.dataset.action === 'remove') {
-        cart.splice(idx, 1);
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const cartItemId = btn.dataset.cartId;
+      const item = cart.find(i => i.cartItemId === cartItemId);
+      if (!item) { btn.disabled = false; return; }
+
+      try {
+        if (btn.dataset.action === 'minus') {
+          await Cart.updateCartItemQty({ supabaseClient, cartItemId, qty: item.qty - 1 });
+        } else if (btn.dataset.action === 'plus') {
+          const max = parseInt(btn.dataset.max, 10) || item.qty;
+          await Cart.updateCartItemQty({ supabaseClient, cartItemId, qty: Math.min(item.qty + 1, max) });
+        } else if (btn.dataset.action === 'remove') {
+          await Cart.removeCartItem({ supabaseClient, cartItemId });
+        }
+        await renderCart();
+        lucide.createIcons();
+      } catch (err) {
+        showMsg('Erreur : ' + (err.message || 'action impossible sur le panier.'), 'error');
+        btn.disabled = false;
       }
-      saveCart(cart);
-      renderCart();
-      lucide.createIcons();
     });
   });
 
@@ -264,16 +269,17 @@ function payerAvecKkiapay(commandeId, total, session) {
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
+  currentUserId = session.user.id;
 
   const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
 
-  renderCart();
+  await renderCart();
   initAdresse();
 
   document.getElementById('btnCommander').addEventListener('click', async () => {
-    const cart = getCart();
+    const cart = await Cart.getCartItems({ supabaseClient, userId: currentUserId });
     if (cart.length === 0) return;
 
     const addr = LocationService.getDefaultAddress();
@@ -309,7 +315,7 @@ async function init() {
       // 3) Le widget confirme le succès, mais la confirmation RÉELLE
       //    et la libération de l'escrow se font côté serveur via le
       //    webhook Kkiapay -> Edge Function -> RPC mark_order_paid()
-      localStorage.removeItem('afima_cart');
+      await Cart.clearCart({ supabaseClient, userId: currentUserId });
       showMsg('Paiement reçu ! Confirmation en cours...', 'success');
       setTimeout(() => window.location.href = 'commandes.html', 1200);
 

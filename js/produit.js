@@ -32,12 +32,11 @@ document.addEventListener('click', e => {
   }
 });
 
-// ── PANIER (localStorage) ──
-function getCart() { return JSON.parse(localStorage.getItem('afima_cart') || '[]'); }
-function saveCart(cart) { localStorage.setItem('afima_cart', JSON.stringify(cart)); }
+// ── PANIER (stocké côté serveur dans panier_items, voir js/utils/cart.js) ──
+let currentUserId = null;
 
-function updateCartBadge() {
-  const total = getCart().reduce((s, i) => s + i.qty, 0);
+async function updateCartBadge() {
+  const total = await Cart.getCartCount({ supabaseClient, userId: currentUserId });
   const badge = document.getElementById('cartBadge');
   if (!badge) return;
   badge.textContent = total;
@@ -48,6 +47,7 @@ function updateCartBadge() {
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
+  currentUserId = session.user.id;
 
   document.getElementById('btnLogout')?.addEventListener('click', async () => {
     await supabaseClient.auth.signOut(); window.location.href = '../index.html';
@@ -56,7 +56,7 @@ async function init() {
     await supabaseClient.auth.signOut(); window.location.href = '../index.html';
   });
 
-  updateCartBadge();
+  await updateCartBadge();
 
   const id = new URLSearchParams(window.location.search).get('id');
   if (!id) { showError(); return; }
@@ -139,33 +139,34 @@ function renderProduit(p, userId) {
   });
 
   // Ajouter au panier
-  document.getElementById('btnPanier').addEventListener('click', () => {
-    ajouterAuPanier(p, parseInt(qtyInput.value));
-    showMsg('Ajouté au panier !', 'success');
+  document.getElementById('btnPanier').addEventListener('click', async () => {
+    try {
+      await ajouterAuPanier(p, parseInt(qtyInput.value));
+      showMsg('Ajouté au panier !', 'success');
+    } catch (err) {
+      showMsg('Erreur : ' + (err.message || 'impossible d\'ajouter au panier.'), 'error');
+    }
   });
 
   // Acheter maintenant : on ajoute au panier puis on va directement au
   // paiement — panier.html gère déjà l'adresse + l'escrow + Kkiapay,
   // pas besoin de dupliquer ce flux ici.
-  document.getElementById('btnAcheter').addEventListener('click', () => {
-    ajouterAuPanier(p, parseInt(qtyInput.value));
-    window.location.href = 'panier.html';
+  document.getElementById('btnAcheter').addEventListener('click', async () => {
+    try {
+      await ajouterAuPanier(p, parseInt(qtyInput.value));
+      window.location.href = 'panier.html';
+    } catch (err) {
+      showMsg('Erreur : ' + (err.message || 'impossible d\'ajouter au panier.'), 'error');
+    }
   });
 
   initializeReviews(p, userId);
   lucide.createIcons();
 }
 
-function ajouterAuPanier(p, qty) {
-  const cart = getCart();
-  const existing = cart.find(i => i.id === p.id);
-  if (existing) {
-    existing.qty = Math.min(existing.qty + qty, p.stock);
-  } else {
-    cart.push({ id: p.id, titre: p.titre, prix: p.prix, image_url: p.image_url, qty, stock: p.stock });
-  }
-  saveCart(cart);
-  updateCartBadge();
+async function ajouterAuPanier(p, qty) {
+  await Cart.addToCart({ supabaseClient, userId: currentUserId, produit: p, qty });
+  await updateCartBadge();
 }
 
 async function initializeReviews(product, userId) {
