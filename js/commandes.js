@@ -44,6 +44,8 @@ const STATUT_INCONNU = { label: 'Statut inconnu', icon: 'help-circle', css: 'sta
 
 // Commandes pour lesquelles il est pertinent de proposer un avis
 const STATUTS_AVIS_AUTORISE = new Set(['confirmee', 'en_cours', 'livree']);
+// Commandes pour lesquelles on peut signaler un problème au centre de résolution
+const STATUTS_LITIGE_AUTORISE = new Set(['en_cours', 'livree']);
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -94,6 +96,7 @@ async function loadCommandes(userId) {
     const date   = new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
     const items  = cmd.commande_items || [];
     const avisAutorise = STATUTS_AVIS_AUTORISE.has(cmd.statut);
+    const litigeAutorise = STATUTS_LITIGE_AUTORISE.has(cmd.statut);
 
     const itemsHtml = items.map(item => {
       const titreSafe = escapeHtml(item.titre);
@@ -107,6 +110,7 @@ async function loadCommandes(userId) {
           <p class="commande-item-detail">Qté : ${item.quantite} × ${fmt(item.prix_unitaire)}</p>
         </div>
         ${avisAutorise ? `<button class="btn-review" type="button" onclick="window.location.href='produit.html?id=${encodeURIComponent(item.produit_id)}&review=1'">Laisser un avis</button>` : ''}
+        ${litigeAutorise ? `<button class="btn-litige" type="button" onclick="window.location.href='litige.html?commande_item_id=${encodeURIComponent(item.id)}'">Signaler un problème</button>` : ''}
         <span class="commande-item-prix">${fmt(item.prix_unitaire * item.quantite)}</span>
       </div>`;
     }).join('');

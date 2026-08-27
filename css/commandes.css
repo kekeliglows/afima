@@ -137,6 +137,22 @@
 }
 .btn-review:hover { border-color: #111; }
 
+.btn-litige {
+  margin-left: auto;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #b91c1c;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Quand l'avis ET le signalement sont tous les deux affichés, un seul
+   des deux doit pousser le groupe à droite. */
+.btn-review + .btn-litige { margin-left: 0; }
+.btn-litige:hover { border-color: #b91c1c; }
+
 /* ── FOOTER COMMANDE ── */
 .commande-footer {
   display: flex;
