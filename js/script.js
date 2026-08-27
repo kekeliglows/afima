@@ -12,12 +12,12 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 const counterObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => {
     if (!e.isIntersecting) return;
-    const el     = e.target;
+    const el = e.target;
     const target = parseInt(el.dataset.target);
     const suffix = target === 98 || target === 24 ? (target === 98 ? '%' : 'h') : '+';
-    let current  = 0;
-    const step   = Math.ceil(target / 55);
-    const timer  = setInterval(() => {
+    let current = 0;
+    const step = Math.ceil(target / 55);
+    const timer = setInterval(() => {
       current = Math.min(current + step, target);
       el.textContent = current.toLocaleString('fr-FR') + suffix;
       if (current >= target) clearInterval(timer);
@@ -28,10 +28,10 @@ const counterObserver = new IntersectionObserver((entries) => {
 document.querySelectorAll('.stat-num').forEach(el => counterObserver.observe(el));
 
 // ── MENU MOBILE HAMBURGER (toutes les pages) ──
-const navToggle  = document.getElementById('navToggle');
+const navToggle = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
-const iconMenu   = navToggle?.querySelector('.icon-menu');
-const iconClose  = navToggle?.querySelector('.icon-close');
+const iconMenu = navToggle?.querySelector('.icon-menu');
+const iconClose = navToggle?.querySelector('.icon-close');
 
 navToggle?.addEventListener('click', () => {
   const isOpen = !mobileMenu.classList.contains('hidden');
@@ -79,11 +79,24 @@ if (form) {
   };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-
   const photoFile = document.getElementById('photoFile');
-  const photoUrl  = document.getElementById('photoUrlInput');
-  const preview   = document.getElementById('imagePreview');
+  const photoUrl = document.getElementById('photoUrlInput');
+  const preview = document.getElementById('imagePreview');
   const placeholder = document.getElementById('previewPlaceholder');
+  const previewWrapper = document.getElementById('previewWrapper');
+
+  // Cliquer sur la zone d'aperçu ouvre le sélecteur de fichiers
+  previewWrapper?.addEventListener('click', () => {
+    photoFile?.click();
+  });
+
+  // Entrée ou Espace permettent également de choisir une image
+  previewWrapper?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      photoFile?.click();
+    }
+  });
 
   function showPreview(src) {
     if (src) {
@@ -95,7 +108,6 @@ if (form) {
       placeholder?.classList.remove('hidden');
     }
   }
-
   function sanitizeFileName(name) {
     return name
       .normalize('NFKD').replace(/[\u0300-\u036f]/g, '') // enlève les accents
@@ -141,12 +153,12 @@ if (form) {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const titre       = document.getElementById('titre').value.trim();
-    const description  = document.getElementById('description').value.trim();
-    const prixInput    = document.getElementById('prix').value;
-    const stockInput   = document.getElementById('stock').value;
-    const file         = photoFile.files[0];
-    const directUrl    = photoUrl.value.trim();
+    const titre = document.getElementById('titre').value.trim();
+    const description = document.getElementById('description').value.trim();
+    const prixInput = document.getElementById('prix').value;
+    const stockInput = document.getElementById('stock').value;
+    const file = photoFile.files[0];
+    const directUrl = photoUrl.value.trim();
 
     // ── Validation manuelle (le formulaire a "novalidate") ──
     if (!titre || titre.length > 150) {
@@ -179,7 +191,7 @@ if (form) {
       return;
     }
 
-    const btn        = document.getElementById('submitBtn');
+    const btn = document.getElementById('submitBtn');
     const submitText = document.getElementById('submitText');
     btn.disabled = true;
     submitText.textContent = 'Publication en cours...';
@@ -201,12 +213,12 @@ if (form) {
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
 
       const { error: dbError } = await supabaseClient.from('produits').insert([{
-        user_id:     currentSession.user.id,
+        user_id: currentSession.user.id,
         titre,
         description,
         prix,
         stock,
-        image_url:   finalImageUrl
+        image_url: finalImageUrl
       }]);
 
       if (dbError) throw dbError;
