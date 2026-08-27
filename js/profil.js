@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function initProfile() {
-  await applyPendingProfileIfAny(sb); // même fonction que dans login.js, à dupliquer ou factoriser
+ 
 
   const { data: { session } } = await sb.auth.getSession();
     if (!session) {

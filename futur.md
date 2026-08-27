@@ -845,3 +845,4 @@ CREATE INDEX idx_payout_requests_user_status
 
 
 
+future nom de domaine: https://afima.org
