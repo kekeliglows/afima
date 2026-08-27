@@ -163,6 +163,9 @@
 .avatar-edit-btn:focus { outline: 3px solid rgba(17,17,17,0.06); }
 
 .profil-edit { padding-bottom: 28px; }
+.edit-only {
+  display: none;
+}
 
 /* Inputs clearer focus and slightly larger touch targets */
 .input-wrap input,
@@ -175,7 +178,85 @@
   border-color: var(--accent);
   box-shadow: 0 6px 20px rgba(17,17,17,0.06);
 }
+/* ── MODE CONSULTATION / ÉDITION ── */
 
+/* Les champs verrouillés ressemblent à des informations consultables. */
+.input-wrap input:disabled,
+.input-wrap select:disabled,
+.input-group textarea:disabled {
+  background: #f8f9fa;
+  color: #374151;
+  border-color: #e5e7eb;
+  cursor: default;
+  opacity: 1;
+}
+
+/* Aucun effet de focus sur les champs non éditables. */
+.input-wrap input:disabled:focus,
+.input-wrap select:disabled:focus,
+.input-group textarea:disabled:focus {
+  border-color: #e5e7eb;
+  box-shadow: none;
+}
+
+/* Les éléments réservés au mode édition sont masqués par défaut. */
+.edit-only {
+  display: none;
+}
+
+/* Ils deviennent visibles lorsque le mode édition est activé. */
+.edit-only.visible {
+  display: flex;
+}
+
+/* Boutons d'action du formulaire. */
+.profil-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.profil-form-actions.hidden {
+  display: none;
+}
+
+.profil-form-actions .btn-outline {
+  flex: 1;
+}
+
+.profil-form-actions .submit-btn {
+  flex: 2;
+}
+
+/* Le bouton Modifier dans l'en-tête. */
+.profil-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.profil-edit-header .btn {
+  flex-shrink: 0;
+}
+
+/* Sur petit écran, les actions passent proprement à la ligne. */
+@media (max-width: 480px) {
+  .profil-edit-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profil-form-actions {
+    flex-direction: column;
+  }
+
+  .profil-form-actions .btn-outline,
+  .profil-form-actions .submit-btn {
+    width: 100%;
+    flex: none;
+  }
+}
 /* Submit button: more prominent on mobile */
 .submit-btn { padding: 14px; }
 

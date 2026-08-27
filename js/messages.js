@@ -26,10 +26,20 @@ async function initMessages() {
 async function loadConversations() {
   // Uniquement les colonnes affichées — pas toute la ligne "profiles"
   const { data, error } = await sb
-    .from('messages')
-    .select(`*, sender:sender_id(id, nom, avatar_url), recipient:recipient_id(id, nom, avatar_url)`)
-    .or(`sender_id.eq.${currentUserId},recipient_id.eq.${currentUserId}`)
-    .order('created_at', { ascending: false });
+  .from('messages')
+  .select(`
+    *,
+    sender:sender_id (
+      id,
+      full_name,
+      avatar_url
+    ),
+    recipient:recipient_id (
+      id,
+      full_name,
+      avatar_url
+    )
+  `)
 
   if (error) {
     console.error(error);
@@ -50,7 +60,7 @@ async function loadConversations() {
     const unread = messages.filter(m => m.recipient_id === currentUserId && !m.read).length;
     return {
       otherId,
-      otherName: other?.nom || other?.email || 'Utilisateur',
+      otherName: other?.full_name || 'Utilisateur',
       otherAvatar: other?.avatar_url || null,
       lastMessage: last.content,
       lastDate: last.created_at,

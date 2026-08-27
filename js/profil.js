@@ -9,30 +9,39 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5 Mo
 let currentUserId = null;
 let currentProfile = null;
 
+// Indique si l'utilisateur est actuellement en mode édition.
+let isEditingProfile = false;
+
+// Copie du profil avant modification.
+// Elle permet de restaurer les valeurs avec "Annuler".
+let originalProfile = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-    initHamburger();
-    initProfile();
+  initHamburger();
+  initProfile();
 });
 
 async function initProfile() {
- 
+
 
   const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      window.location.href = 'login.html';
-      return;
-    }
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
 
-    currentUserId = session.user.id;
+  currentUserId = session.user.id;
 
-    document.getElementById('btnLogout')?.addEventListener('click', logout);
-    document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-    document.getElementById('btnLogoutDanger')?.addEventListener('click', logout);
-    document.getElementById('profilForm')?.addEventListener('submit', saveProfile);
-    document.getElementById('avatarFile')?.addEventListener('change', previewAvatar);
+  document.getElementById('btnLogout')?.addEventListener('click', logout);
+  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
+  document.getElementById('btnLogoutDanger')?.addEventListener('click', logout);
+  document.getElementById('profilForm')?.addEventListener('submit', saveProfile);
+  document.getElementById('avatarFile')?.addEventListener('change', previewAvatar);
+  document.getElementById('btnEditProfile')?.addEventListener('click', enableProfileEdit);
+  document.getElementById('btnCancelEdit')?.addEventListener('click', cancelProfileEdit);
 
-    await loadProfile(session.user);
-    await loadProductCount(currentUserId);
+  await loadProfile(session.user);
+  await loadProductCount(currentUserId);
   initVendeurModal();
 }
 
@@ -49,15 +58,16 @@ async function loadProfile(sessionUser) {
   }
 
   currentProfile = profile || {
-      full_name: sessionUser.email.split('@')[0],
-      bio: '',
-      phone: '',
-      city: '',
-      avatar_url: null,
-      updated_at: sessionUser.created_at,
-      role: 'acheteur',
-      currency: 'EUR'
+    full_name: sessionUser.email.split('@')[0],
+    bio: '',
+    phone: '',
+    city: '',
+    avatar_url: null,
+    updated_at: sessionUser.created_at,
+    role: 'acheteur',
+    currency: 'EUR'
   };
+  originalProfile = { ...currentProfile };
 
   if (!profile) {
     await sb.from('profiles').upsert({
@@ -91,6 +101,7 @@ async function loadProfile(sessionUser) {
 
   renderAvatar(currentProfile.avatar_url);
   updateRoleUI(currentProfile.role);
+  setProfileEditMode(false);
 }
 
 function updateRoleUI(role) {
@@ -147,11 +158,16 @@ function validateAvatarFile(file) {
 }
 
 function previewAvatar() {
+  // Impossible de modifier l'avatar hors du mode édition.
+  if (!isEditingProfile) return;
+
   const fileInput = document.getElementById('avatarFile');
   const file = fileInput.files?.[0];
+
   if (!file) return;
 
   const errorMsg = validateAvatarFile(file);
+
   if (errorMsg) {
     showMsg(errorMsg, 'error');
     fileInput.value = '';
@@ -159,10 +175,14 @@ function previewAvatar() {
   }
 
   const avatarImg = document.getElementById('avatarImg');
+
   if (avatarImg) {
     avatarImg.src = URL.createObjectURL(file);
     avatarImg.classList.remove('hidden');
-    document.getElementById('avatarPlaceholder')?.classList.add('hidden');
+
+    document
+      .getElementById('avatarPlaceholder')
+      ?.classList.add('hidden');
   }
 }
 
@@ -175,7 +195,95 @@ function getStoragePathFromUrl(url) {
   if (idx === -1) return null;
   return url.slice(idx + marker.length);
 }
+// Active ou désactive le mode édition du profil.
+function setProfileEditMode(editing) {
+  isEditingProfile = editing;
 
+  const fields = [
+    'profilNom',
+    'profilTel',
+    'profilVille',
+    'profilCurrency',
+    'profilBio'
+  ];
+
+  fields.forEach(id => {
+    const field = document.getElementById(id);
+    if (field) {
+      field.disabled = !editing;
+    }
+  });
+
+  const editButton = document.getElementById('btnEditProfile');
+  const formActions = document.getElementById('profilFormActions');
+  const title = document.getElementById('profilEditTitle');
+  const description = document.getElementById('profilEditDescription');
+
+  editButton?.classList.toggle('hidden', editing);
+  formActions?.classList.toggle('hidden', !editing);
+
+  document.querySelectorAll('.edit-only').forEach(element => {
+    element.classList.toggle('visible', editing);
+  });
+
+  if (title) {
+    title.textContent = editing ? 'Modifier mon profil' : 'Mon profil';
+  }
+
+  if (description) {
+    description.textContent = editing
+      ? 'Modifiez vos informations personnelles.'
+      : 'Consultez vos informations personnelles.';
+  }
+}
+
+// Passe explicitement en mode édition.
+function enableProfileEdit() {
+  if (!currentProfile) return;
+
+  // On reprend toujours les données actuellement enregistrées
+  // comme base avant de commencer une nouvelle modification.
+  originalProfile = { ...currentProfile };
+
+  setProfileEditMode(true);
+}
+
+// Annule les modifications et restaure les valeurs originales.
+function cancelProfileEdit() {
+  if (!originalProfile) {
+    setProfileEditMode(false);
+    return;
+  }
+
+  document.getElementById('profilNom').value =
+    originalProfile.full_name || '';
+
+  document.getElementById('profilTel').value =
+    originalProfile.phone || '';
+
+  document.getElementById('profilVille').value =
+    originalProfile.city || '';
+
+  document.getElementById('profilBio').value =
+    originalProfile.bio || '';
+
+  document.getElementById('profilCurrency').value =
+    originalProfile.currency || 'EUR';
+
+  // Restaure également l'avatar affiché.
+  renderAvatar(originalProfile.avatar_url);
+
+  // Réinitialise le fichier sélectionné.
+  const avatarFile = document.getElementById('avatarFile');
+  if (avatarFile) {
+    avatarFile.value = '';
+  }
+
+  // Réutilise le profil original comme état courant.
+  currentProfile = { ...originalProfile };
+
+  setProfileEditMode(false);
+}
 async function saveProfile(event) {
   event.preventDefault();
 
@@ -246,6 +354,10 @@ async function saveProfile(event) {
     renderAvatar(currentProfile.avatar_url);
 
     localStorage.setItem('afima_currency', updates.currency);
+    // La sauvegarde est terminée : on revient automatiquement
+    // en mode consultation.
+    originalProfile = { ...currentProfile };
+    setProfileEditMode(false);
 
     showMsg('Profil mis à jour avec succès.', 'success');
   } catch (err) {
