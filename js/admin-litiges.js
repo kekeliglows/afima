@@ -1,6 +1,4 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
@@ -23,11 +21,11 @@ navToggle?.addEventListener('click', () => {
 });
 document.addEventListener('click', e => {
   if (mobileMenu && !mobileMenu.classList.contains('hidden') &&
-      !navToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+      !navToggle?.contains(e.target) && !mobileMenu.contains(e.target)) {
     mobileMenu.classList.add('hidden');
-    navToggle.querySelector('.icon-menu')?.classList.remove('hidden');
-    navToggle.querySelector('.icon-close')?.classList.add('hidden');
-    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle?.querySelector('.icon-menu')?.classList.remove('hidden');
+    navToggle?.querySelector('.icon-close')?.classList.add('hidden');
+    navToggle?.setAttribute('aria-expanded', 'false');
   }
 });
 

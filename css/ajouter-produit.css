@@ -13,7 +13,7 @@
   max-width: 580px;
   border-radius: 18px;
   border: 1px solid #e5e7eb;
-  box-shadow: 0 8px 28px rgba(0,0,0,0.07);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.07);
   overflow: hidden;
 }
 
@@ -36,9 +36,12 @@
   margin-top: 4px;
 }
 
-form { padding: 0 32px 32px; }
+form {
+  padding: 0 32px 32px;
+}
 
 /* ── INPUTS ── */
+
 .input-group {
   margin-bottom: 18px;
   display: flex;
@@ -55,7 +58,13 @@ form { padding: 0 32px 32px; }
   color: #111;
   letter-spacing: 0.2px;
 }
-.input-group label svg { width: 14px; height: 14px; color: #6b7280; flex-shrink: 0; }
+
+.input-group label svg {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+  flex-shrink: 0;
+}
 
 .input-group input,
 .input-group textarea {
@@ -69,21 +78,30 @@ form { padding: 0 32px 32px; }
   background: #fafafa;
   color: #111;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .input-group input:focus,
 .input-group textarea:focus {
   border-color: #111;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(17,17,17,0.06);
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
 }
 
-.input-group textarea { min-height: 96px; resize: vertical; line-height: 1.5; }
-.input-group input[type="file"] { padding: 9px 12px; cursor: pointer; background: #fff; }
+.input-group textarea {
+  min-height: 96px;
+  resize: vertical;
+  line-height: 1.5;
+}
 
-.row-group { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.row-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
 
 /* ── SECTION IMAGE ── */
+
 .image-section {
   background: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -99,6 +117,8 @@ form { padding: 0 32px 32px; }
   margin-bottom: 14px;
   letter-spacing: 0.2px;
 }
+
+/* ── ZONE IMAGE / APERÇU ── */
 
 .image-preview-wrapper {
   position: relative;
@@ -128,8 +148,24 @@ form { padding: 0 32px 32px; }
   border-color: #111;
   box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
-#imagePreview { width: 100%; height: 100%; object-fit: cover; }
-#imagePreview.hidden { display: none; }
+
+/* ── APERÇU ── */
+
+#imagePreview {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  max-height: 420px;
+  object-fit: contain;
+  display: block;
+  background: #f8f8f8;
+}
+
+#imagePreview.hidden {
+  display: none;
+}
+
+/* ── PLACEHOLDER ── */
 
 .preview-placeholder {
   display: flex;
@@ -160,26 +196,14 @@ form { padding: 0 32px 32px; }
   color: #9ca3af;
 }
 
-#imagePreview {
-  width: 100%;
-  height: 100%;
-  min-height: 260px;
-  object-fit: contain;
-  display: block;
-  background: #f8f8f8;
-}
-
-#imagePreview.hidden {
-  display: none;
-}
-
-/* Input fichier complètement invisible */
+/* ── INPUT FICHIER INVISIBLE ── */
 
 #photoFile {
   display: none;
 }
 
 /* ── SÉPARATEUR ── */
+
 .separator {
   display: flex;
   align-items: center;
@@ -189,10 +213,17 @@ form { padding: 0 32px 32px; }
   font-size: 0.8rem;
   font-weight: 600;
 }
+
 .separator::before,
-.separator::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
+.separator::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e5e7eb;
+}
 
 /* ── BOUTON SUBMIT ── */
+
 .submit-btn {
   width: 100%;
   display: inline-flex;
@@ -210,12 +241,16 @@ form { padding: 0 32px 32px; }
   font-family: inherit;
   transition: all 0.2s ease;
 }
-.submit-btn svg { width: 17px; height: 17px; }
+
+.submit-btn svg {
+  width: 17px;
+  height: 17px;
+}
 
 .submit-btn:hover {
   background: #333;
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .submit-btn:disabled {
@@ -225,7 +260,28 @@ form { padding: 0 32px 32px; }
   box-shadow: none;
 }
 
+/* ── RESPONSIVE ── */
+
 @media (max-width: 600px) {
-  .form-card-header, form { padding-left: 20px; padding-right: 20px; }
-  .row-group { grid-template-columns: 1fr; }
+  .form-card-header,
+  form {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .row-group {
+    grid-template-columns: 1fr;
+  }
+
+  .image-section {
+    padding: 16px;
+  }
+
+  .image-preview-wrapper {
+    min-height: 220px;
+  }
+
+  #imagePreview {
+    min-height: 220px;
+  }
 }

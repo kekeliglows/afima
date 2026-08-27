@@ -1,123 +1,176 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Mes Litiges — afima</title>
-  <meta name="description" content="Suivez vos signalements et litiges sur afima.">
-  <meta name="robots" content="noindex, nofollow">
-  <link rel="icon" href="../assets/logo.png" type="image/png">
-  <link rel="apple-touch-icon" href="../assets/logo.png">
-  <meta name="theme-color" content="#111111">
+    <title>Mes Litiges — afima</title>
+    <meta name="description" content="Suivez vos signalements et litiges sur afima.">
+    <meta name="robots" content="noindex, nofollow">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/index.css">
-  <link rel="stylesheet" href="../css/commandes.css">
-  <link rel="stylesheet" href="../css/litiges.css">
-  <link rel="shortcut icon" href="../assets/logo.png" type="image/x-icon">
+    <link rel="icon" href="../assets/logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="../assets/logo.png">
+    <link rel="shortcut icon" href="../assets/logo.png" type="image/x-icon">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="../js/utils/cart.js"></script>
-  <script src="../js/utils/litiges.js"></script>
-  <script src="../js/litiges.js" defer></script>
+    <meta name="theme-color" content="#111111">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="../css/index.css">
+    <link rel="stylesheet" href="../css/commandes.css">
+    <link rel="stylesheet" href="../css/litiges.css">
+
+    <!-- Bibliothèques externes -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Scripts de l'application -->
+    <!-- L'ordre est important : Supabase doit être initialisé avant les autres scripts -->
+    <script src="../js/supabase.js"></script>
+    <script src="../js/cart.js"></script>
+    <script src="../js/utils/litiges.js"></script>
+
+    <!-- Script spécifique à cette page -->
+    <script src="../js/litiges.js" defer></script>
+  
 </head>
+
 <body>
-  <header>
-    <nav class="navigation" aria-label="Navigation principale">
-      <a href="../index.html" class="logo">
-        <img src="../assets/logo.png" alt="afima Logo" width="36" height="36">
-        <span class="logo-text">afima</span>
-      </a>
+    <header>
+        <nav class="navigation" aria-label="Navigation principale">
+            <a href="../index.html" class="logo">
+                <img src="../assets/logo.png" alt="afima Logo" width="36" height="36">
+                <span class="logo-text">afima</span>
+            </a>
 
-      <ul class="header_btn" id="navLinks">
-        <li>
-          <a href="dashboard.html" class="btn btn-outline">
-            <i data-lucide="layout-dashboard"></i> Dashboard
-          </a>
-        </li>
-        <li>
-          <a href="catalogue.html" class="btn btn-outline">
-            <i data-lucide="layout-grid"></i> Catalogue
-          </a>
-        </li>
-        <li>
-          <a href="panier.html" class="btn btn-outline nav-cart">
-            <i data-lucide="shopping-cart"></i>
-            <span class="cart-badge hidden" id="cartBadge">0</span>
-            Panier
-          </a>
-        </li>
-        <li>
-          <a href="commandes.html" class="btn btn-outline">
-            <i data-lucide="package"></i> Mes commandes
-          </a>
-        </li>
-        <li>
-          <a href="litiges.html" class="btn btn-outline active-nav">
-            <i data-lucide="shield-alert"></i> Mes litiges
-          </a>
-        </li>
-        <li>
-          <a href="profil.html" class="btn btn-outline">
-            <i data-lucide="user"></i> Profil
-          </a>
-        </li>
-        <li>
-          <button class="btn btn-outline" id="btnLogout">
-            <i data-lucide="log-out"></i> Déconnexion
-          </button>
-        </li>
-      </ul>
+            <ul class="header_btn" id="navLinks">
+                <li>
+                    <a href="dashboard.html" class="btn btn-outline">
+                        <i data-lucide="layout-dashboard"></i> Dashboard
+                    </a>
+                </li>
 
-      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
-        <i data-lucide="menu" class="icon-menu"></i>
-        <i data-lucide="x" class="icon-close hidden"></i>
-      </button>
-    </nav>
+                <li>
+                    <a href="catalogue.html" class="btn btn-outline">
+                        <i data-lucide="layout-grid"></i> Catalogue
+                    </a>
+                </li>
 
-    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
-      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
-      <a href="panier.html" class="mobile-link"><i data-lucide="shopping-cart"></i> Panier</a>
-      <a href="commandes.html" class="mobile-link"><i data-lucide="package"></i> Mes commandes</a>
-      <a href="litiges.html" class="mobile-link"><i data-lucide="shield-alert"></i> Mes litiges</a>
-      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
-        <i data-lucide="log-out"></i> Déconnexion
-      </button>
-    </div>
-  </header>
+                <li>
+                    <a href="panier.html" class="btn btn-outline nav-cart">
+                        <i data-lucide="shopping-cart"></i>
+                        <span class="cart-badge hidden" id="cartBadge">0</span>
+                        Panier
+                    </a>
+                </li>
 
-  <main class="commandes-main">
-    <h1 class="commandes-title">
-      <i data-lucide="shield-alert"></i> Mes Litiges
-    </h1>
+                <li>
+                    <a href="commandes.html" class="btn btn-outline">
+                        <i data-lucide="package"></i> Mes commandes
+                    </a>
+                </li>
 
-    <div id="litiges-list" class="commandes-list" aria-live="polite">
-      <div class="cmd-skeleton" id="litigesSkeleton">
-        <div class="skeleton-cmd"></div>
-        <div class="skeleton-cmd"></div>
-      </div>
-    </div>
-  </main>
+                <li>
+                    <a href="litiges.html" class="btn btn-outline active-nav">
+                        <i data-lucide="shield-alert"></i> Mes litiges
+                    </a>
+                </li>
 
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="../assets/logo.png" alt="afima">
-        <span>afima</span>
-      </div>
-      <p>&copy; 2026 afima. Tous droits réservés.</p>
-      <div class="footer-links">
-        <a href="a-propos.html">À propos</a>
-        <a href="faq.html">FAQ</a>
-        <a href="conditions-utilisation.html">Conditions d'utilisation</a>
-        <a href="politique-confidentialite.html">Politique de confidentialité</a>
-      </div>
-    </div>
-  </footer>
+                <li>
+                    <a href="profil.html" class="btn btn-outline">
+                        <i data-lucide="user"></i> Profil
+                    </a>
+                </li>
 
-  <script>lucide.createIcons();</script>
+                <li>
+                    <button class="btn btn-outline" id="btnLogout">
+                        <i data-lucide="log-out"></i> Déconnexion
+                    </button>
+                </li>
+            </ul>
+
+            <button
+                class="nav-toggle"
+                id="navToggle"
+                aria-label="Ouvrir le menu"
+                aria-expanded="false"
+                aria-controls="mobileMenu"
+            >
+                <i data-lucide="menu" class="icon-menu"></i>
+                <i data-lucide="x" class="icon-close hidden"></i>
+            </button>
+        </nav>
+
+        <div
+            class="mobile-menu hidden"
+            id="mobileMenu"
+            role="navigation"
+            aria-label="Menu mobile"
+        >
+            <a href="catalogue.html" class="mobile-link">
+                <i data-lucide="layout-grid"></i> Catalogue
+            </a>
+
+            <a href="panier.html" class="mobile-link">
+                <i data-lucide="shopping-cart"></i> Panier
+            </a>
+
+            <a href="commandes.html" class="mobile-link">
+                <i data-lucide="package"></i> Mes commandes
+            </a>
+
+            <a href="litiges.html" class="mobile-link">
+                <i data-lucide="shield-alert"></i> Mes litiges
+            </a>
+
+            <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+                <i data-lucide="log-out"></i> Déconnexion
+            </button>
+        </div>
+    </header>
+
+    <main class="commandes-main">
+        <h1 class="commandes-title">
+            <i data-lucide="shield-alert"></i>
+            Mes Litiges
+        </h1>
+
+        <div
+            id="litiges-list"
+            class="commandes-list"
+            aria-live="polite"
+        >
+            <div class="cmd-skeleton" id="litigesSkeleton">
+                <div class="skeleton-cmd"></div>
+                <div class="skeleton-cmd"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <img src="../assets/logo.png" alt="afima">
+                <span>afima</span>
+            </div>
+
+            <p>&copy; 2026 afima. Tous droits réservés.</p>
+
+            <div class="footer-links">
+                <a href="a-propos.html">À propos</a>
+                <a href="faq.html">FAQ</a>
+                <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+                <a href="politique-confidentialite.html">Politique de confidentialité</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
+
 </html>
