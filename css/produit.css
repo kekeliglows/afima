@@ -230,6 +230,29 @@
 .btn-panier:hover { border-color: #111; background: #f9fafb; }
 .btn-panier:disabled { opacity: 0.5; cursor: not-allowed; }
 
+.btn-contact-vendeur {
+  flex: 1;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: #fff;
+  color: #111;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s;
+  min-width: 160px;
+}
+.btn-panier svg { width: 17px; height: 17px; }
+.btn-panier:hover { border-color: #111; background: #f9fafb; }
+.btn-panier:disabled { opacity: 0.5; cursor: not-allowed; }
+
 /* ── ACTIONS SUPPLÉMENTAIRES ── */
 .produit-extra-actions {
   display: flex;

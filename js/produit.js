@@ -92,6 +92,7 @@ function renderProduit(p, userId) {
   currentProduit = p;
   document.getElementById('produitSkeleton').classList.add('hidden');
   document.getElementById('produitContent').classList.remove('hidden');
+  document.getElementById('btnContactVendeur').href = `messages.html?to=${encodeURIComponent(p.user_id)}`;
 
   document.title = `${p.titre} — afima`;
 
@@ -127,6 +128,7 @@ function renderProduit(p, userId) {
     badge.className = 'produit-badge out';
     document.getElementById('btnAcheter').disabled = true;
     document.getElementById('btnPanier').disabled = true;
+    
   }
 
   const qtyInput = document.getElementById('qtyInput');

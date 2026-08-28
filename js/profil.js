@@ -222,6 +222,27 @@ async function loadProfile(sessionUser) {
   saveOriginalProfileValues();
   renderProfile(sessionUser);
   await updateRoleUI(currentProfile.role);
+  await updateAdminUI();
+}
+
+// ============================================================
+// SECTION ADMINISTRATION
+// ============================================================
+
+async function updateAdminUI() {
+  const adminSection = document.getElementById("adminSection");
+  if (!adminSection) return;
+
+  try {
+    const admin = await VerificationAPI.isAdmin({
+      supabaseClient: profileSupabaseClient,
+      userId: currentUserId,
+    });
+    adminSection.classList.toggle("hidden", !admin);
+  } catch (error) {
+    console.warn("Impossible de vérifier le statut admin :", error);
+    adminSection.classList.add("hidden");
+  }
 }
 
 // ============================================================
