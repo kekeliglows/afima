@@ -9,8 +9,7 @@
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <meta name="theme-color" content="#111111">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/messages.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -31,8 +30,7 @@
         <li><a href="profil.html" class="btn btn-outline"><i data-lucide="user"></i> Profil</a></li>
         <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
       </ul>
-      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false"
-        aria-controls="mobileMenu">
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
         <i data-lucide="menu" class="icon-menu"></i>
         <i data-lucide="x" class="icon-close hidden"></i>
       </button>
@@ -41,8 +39,7 @@
       <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
       <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
       <a href="profil.html" class="mobile-link"><i data-lucide="user"></i> Profil</a>
-      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i>
-        Déconnexion</button>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
     </div>
   </header>
 
@@ -95,12 +92,35 @@
 
           <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
 
+          <!-- Barre d'input : champ, égaliseur, boutons -->
           <form class="chat-input-bar" id="chatInputForm">
+
             <input type="text" id="chatInput" placeholder="Écrire un message..." autocomplete="off" maxlength="1000">
 
+            <!-- Égaliseur (caché par défaut) -->
+            <div id="voiceEqualizer" style="display: none; align-items: center; gap: 3px; height: 40px; padding: 0 10px;">
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+              <span class="eq-bar" style="width: 4px; background: #111; border-radius: 2px; height: 5px; transition: height 0.1s;"></span>
+            </div>
+
+            <!-- Bouton pièce jointe -->
+            <button type="button" class="chat-attach-btn" id="chatAttachBtn" aria-label="Joindre un fichier">
+              <i data-lucide="paperclip"></i>
+            </button>
+            <!-- Input file caché -->
+            <input type="file" id="fileInput" style="display: none;" accept="image/*,.pdf,.doc,.docx,.txt">
+
+            <!-- Bouton vocal -->
             <button type="button" class="chat-voice-btn" id="chatVoiceBtn" aria-label="Enregistrer un message vocal">
               <i data-lucide="mic"></i>
             </button>
+
+            <!-- Bouton d'envoi -->
             <button type="submit" class="chat-send-btn" aria-label="Envoyer">
               <i data-lucide="send"></i>
             </button>

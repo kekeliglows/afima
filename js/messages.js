@@ -1,145 +1,110 @@
 const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// =========================
+//  ÉTAT GLOBAL
+// =========================
 let currentUserId = null;
 let activeConversation = null;
 let conversations = [];
 
-// ============ VARIABLES POUR VOCAL ============
+// Sélection multiple
+let selectedMessages = new Set();
+let selectionMode = false;
+
+// Enregistrement vocal
 let mediaRecorder = null;
 let audioChunks = [];
 let isRecording = false;
+let isCancellingRecording = false;
+let audioContext = null;
+let analyser = null;
+let dataArray = null;
+let animationId = null;
 
-// ============ VARIABLES POUR PRÉSENCE ============
+// Présence en temps réel
 let presenceChannel = null;
 
-initHamburger();
-initMessages();
-
-// ============ INITIALISATION ============
-async function initMessages() {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'login.html'; return; }
-  currentUserId = session.user.id;
-  window.addEventListener('resize', () => {
-    if (window.innerWidth > 768) {
-      // Sur desktop, on enlève les classes hidden-mobile pour tout le monde
-      document.getElementById('chatSidebar')?.classList.remove('hidden-mobile');
-      document.getElementById('chatArea')?.classList.remove('hidden-mobile');
-    } else {
-      // Sur mobile, si une conversation est active, on cache la sidebar
-      if (activeConversation) {
-        document.getElementById('chatSidebar')?.classList.add('hidden-mobile');
-        document.getElementById('chatArea')?.classList.remove('hidden-mobile');
-      } else {
-        document.getElementById('chatSidebar')?.classList.remove('hidden-mobile');
-        document.getElementById('chatArea')?.classList.add('hidden-mobile');
-      }
-    }
-    // Dans initMessages(), après les autres écouteurs
-    window.addEventListener('resize', handleResize);
+// =========================
+//  INITIALISATION
+// =========================
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    initHamburger();
+    initMessages();
   });
-  function handleResize() {
-  const isMobile = window.innerWidth <= 768;
-  const sidebar = document.getElementById('chatSidebar');
-  const area = document.getElementById('chatArea');
-
-  if (!isMobile) {
-    // Desktop : tout afficher
-    sidebar?.classList.remove('hidden-mobile');
-    area?.classList.remove('hidden-mobile');
-  } else {
-    // Mobile : adapter à l'état courant
-    if (activeConversation) {
-      sidebar?.classList.add('hidden-mobile');
-      area?.classList.remove('hidden-mobile');
-    } else {
-      sidebar?.classList.remove('hidden-mobile');
-      area?.classList.add('hidden-mobile');
-    }
-  }
-}
-  document.getElementById('btnLogout')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-  document.getElementById('convSearch')?.addEventListener('input', filterConversations);
-  document.getElementById('chatInputForm')?.addEventListener('submit', sendMessage);
-  document.getElementById('chatBack')?.addEventListener('click', () => switchChat(null));
-
-  // Bouton vocal
-  const voiceBtn = document.getElementById('chatVoiceBtn');
-  if (voiceBtn) {
-    voiceBtn.addEventListener('mousedown', startVoiceRecording);
-    voiceBtn.addEventListener('mouseup', cancelRecording);
-    voiceBtn.addEventListener('mouseleave', cancelRecording);
-    voiceBtn.addEventListener('touchstart', startVoiceRecording);
-    voiceBtn.addEventListener('touchend', cancelRecording);
-  }
-
-  // Gestion du statut "en train d'écrire"
-  const input = document.getElementById('chatInput');
-  if (input) {
-    input.addEventListener('focus', () => updatePresenceStatus('typing'));
-    input.addEventListener('blur', () => updatePresenceStatus('online'));
-  }
-
-  await loadConversations();
-  await markAllReceivedAsDelivered();
-  await openConversationFromUrl();
-  subscribeRealtime();
+} else {
+  initHamburger();
+  initMessages();
 }
 
-// ============ MARQUER TOUS LES REÇUS COMME DÉLIVRÉS ============
-async function markAllReceivedAsDelivered() {
-  const { error } = await sb
-    .from('messages')
-    .update({ delivered: true })
-    .eq('recipient_id', currentUserId)
-    .eq('delivered', false);
-  if (error) console.warn('Erreur mise à jour delivered :', error.message);
-}
-
-// ============ OUVERTURE DEPUIS L'URL ============
-async function openConversationFromUrl() {
-  const params = new URLSearchParams(window.location.search);
-  const toId = params.get('to');
-  if (!toId || toId === currentUserId) return;
-
-  const existing = conversations.find(conv => conv.otherId === toId);
-  if (existing) {
-    await selectConversation(toId);
-    return;
-  }
-
-  let otherName = 'Vendeur';
-  let otherAvatar = null;
+async function initMessages() {
   try {
-    const { data: profile } = await sb
-      .from('profiles')
-      .select('full_name, avatar_url')
-      .eq('id', toId)
-      .maybeSingle();
-    if (profile) otherName = profile.full_name || otherName;
-    otherAvatar = profile?.avatar_url || null;
-  } catch (err) {
-    console.warn('Nom du vendeur non disponible :', err.message);
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      window.location.href = 'login.html';
+      return;
+    }
+    currentUserId = session.user.id;
+
+    document.getElementById('btnLogout')?.addEventListener('click', logout);
+    document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
+    document.getElementById('convSearch')?.addEventListener('input', filterConversations);
+    document.getElementById('chatInputForm')?.addEventListener('submit', sendMessage);
+    document.getElementById('chatBack')?.addEventListener('click', () => switchChat(null));
+
+    // Gestion du microphone
+    const voiceBtn = document.getElementById('chatVoiceBtn');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('mousedown', startVoiceRecording);
+      voiceBtn.addEventListener('mouseup', stopVoiceRecording);
+      voiceBtn.addEventListener('mouseleave', cancelVoiceRecording);
+      voiceBtn.addEventListener('touchstart', startVoiceRecording, { passive: false });
+      voiceBtn.addEventListener('touchend', stopVoiceRecording);
+    }
+
+    // Gestion des pièces jointes
+    const attachBtn = document.getElementById('chatAttachBtn');
+    const fileInput = document.getElementById('fileInput');
+    if (attachBtn && fileInput) {
+      attachBtn.addEventListener('click', () => fileInput.click());
+      fileInput.addEventListener('change', sendFileMessage);
+    }
+
+    // Indicateurs de saisie (typing)
+    const input = document.getElementById('chatInput');
+    if (input) {
+      input.addEventListener('focus', () => updatePresenceStatus('typing'));
+      input.addEventListener('blur', () => updatePresenceStatus('online'));
+    }
+
+    window.addEventListener('resize', handleResize);
+
+    await loadConversations();
+    await markAllReceivedAsDelivered();
+    await openConversationFromUrl();
+    subscribeRealtime();
+
+  } catch (error) {
+    console.error('Erreur initialisation :', error);
   }
-
-  activeConversation = {
-    otherId: toId,
-    otherName,
-    otherAvatar,
-    lastMessage: null,
-    lastDate: new Date().toISOString(),
-    unread: 0,
-    messages: []
-  };
-
-  renderChat();
-  switchChat(toId);
-  subscribeToPresence(toId); // Démarrer la présence pour cette nouvelle conversation
 }
 
-// ============ CHARGER LES CONVERSATIONS ============
+// =========================
+//  FILTRAGE DES MESSAGES MASQUÉS
+// =========================
+function isMessageHiddenForCurrentUser(msg) {
+  const isMine = String(msg.sender_id) === String(currentUserId);
+  if (msg.deleted_for_everyone) return true;
+  if (isMine && msg.deleted_for_sender) return true;
+  if (!isMine && msg.deleted_for_recipient) return true;
+  return false;
+}
+
+// =========================
+//  CHARGEMENT DES CONVERSATIONS
+// =========================
 async function loadConversations() {
   const { data, error } = await sb
     .from('messages')
@@ -147,32 +112,45 @@ async function loadConversations() {
       *,
       sender:sender_id ( id, full_name, avatar_url ),
       recipient:recipient_id ( id, full_name, avatar_url )
-    `);
+    `)
+    .order('created_at', { ascending: true });
 
   if (error) {
-    console.error(error);
+    console.error('loadConversations :', error);
     return;
   }
 
-  const grouped = data.reduce((acc, message) => {
-    const otherId = message.sender_id === currentUserId ? message.recipient_id : message.sender_id;
+  const grouped = (data || []).reduce((acc, msg) => {
+    const otherId = String(msg.sender_id) === String(currentUserId) ? msg.recipient_id : msg.sender_id;
     if (!acc[otherId]) acc[otherId] = [];
-    acc[otherId].push(message);
+    acc[otherId].push(msg);
     return acc;
   }, {});
 
-  conversations = Object.entries(grouped).map(([otherId, messages]) => {
-    const last = messages[messages.length - 1];
-    const other = last.sender_id === currentUserId ? last.recipient : last.sender;
-    const unread = messages.filter(m => m.recipient_id === currentUserId && !m.read).length;
+  conversations = Object.entries(grouped).map(([otherId, allMessages]) => {
+    const visibleMessages = allMessages.filter(msg => !isMessageHiddenForCurrentUser(msg));
+
+    const last = visibleMessages.length > 0 ? visibleMessages[visibleMessages.length - 1] : null;
+    const lastRaw = allMessages[allMessages.length - 1];
+    const otherProfile = lastRaw ? (String(lastRaw.sender_id) === String(currentUserId) ? lastRaw.recipient : lastRaw.sender) : null;
+    const unread = visibleMessages.filter(m => String(m.recipient_id) === String(currentUserId) && !m.read).length;
+
+    let preview = 'Démarrez la conversation.';
+    if (last) {
+      if (last.type === 'audio') preview = 'Message vocal';
+      else if (last.type === 'image') preview = 'Image';
+      else if (last.type === 'file') preview = 'Fichier';
+      else preview = last.content || 'Message';
+    }
+
     return {
       otherId,
-      otherName: other?.full_name || 'Utilisateur',
-      otherAvatar: other?.avatar_url || null,
-      lastMessage: last.content,
-      lastDate: last.created_at,
+      otherName: otherProfile?.full_name || 'Utilisateur',
+      otherAvatar: otherProfile?.avatar_url || null,
+      lastMessage: preview,
+      lastDate: last?.created_at || new Date().toISOString(),
       unread,
-      messages,
+      messages: visibleMessages
     };
   }).sort((a, b) => new Date(b.lastDate) - new Date(a.lastDate));
 
@@ -187,15 +165,16 @@ async function loadConversations() {
   }
 }
 
-// ============ RENDU DE LA LISTE ============
 function renderConversations(list) {
   const container = document.getElementById('convList');
   const unreadTotal = document.getElementById('unreadTotal');
   if (!container) return;
 
   const totalUnread = list.reduce((sum, item) => sum + item.unread, 0);
-  unreadTotal.textContent = totalUnread > 0 ? totalUnread : '';
-  unreadTotal.classList.toggle('hidden', totalUnread === 0);
+  if (unreadTotal) {
+    unreadTotal.textContent = totalUnread > 0 ? totalUnread : '';
+    unreadTotal.classList.toggle('hidden', totalUnread === 0);
+  }
 
   if (list.length === 0) {
     container.innerHTML = '<div class="empty-conv"><p>Aucune conversation pour le moment.</p></div>';
@@ -219,7 +198,8 @@ function renderConversations(list) {
           <span class="conv-time">${formatTime(conv.lastDate)}</span>
           ${conv.unread ? `<span class="conv-unread">${conv.unread}</span>` : ''}
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 
   container.querySelectorAll('.conv-item').forEach(item => {
@@ -227,7 +207,6 @@ function renderConversations(list) {
   });
 }
 
-// ============ FILTRE ============
 function filterConversations(event) {
   const query = event.target.value.trim().toLowerCase();
   const filtered = conversations.filter(conv =>
@@ -237,179 +216,359 @@ function filterConversations(event) {
   renderConversations(filtered);
 }
 
-// ============ SÉLECTIONNER UNE CONVERSATION ============
 async function selectConversation(otherId) {
-  activeConversation = conversations.find(conv => conv.otherId === otherId);
+  selectedMessages.clear();
+  selectionMode = false;
+  activeConversation = conversations.find(c => c.otherId === otherId);
   if (!activeConversation) return;
   renderChat();
   switchChat(otherId);
   subscribeToPresence(otherId);
   await markAsRead(otherId);
 
-  // --- GESTION MOBILE ---
   if (window.innerWidth <= 768) {
     document.getElementById('chatSidebar')?.classList.add('hidden-mobile');
     document.getElementById('chatArea')?.classList.remove('hidden-mobile');
   }
 }
 
-// ============ MARQUER COMME LU ============
-async function markAsRead(otherId) {
-  const unreadIds = (activeConversation?.messages || [])
-    .filter(m => m.recipient_id === currentUserId && !m.read)
-    .map(m => m.id);
+async function openConversationFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const toId = params.get('to');
+  if (!toId || String(toId) === String(currentUserId)) return;
 
-  if (unreadIds.length === 0) return;
-
-  const { error } = await sb
-    .from('messages')
-    .update({ read: true, delivered: true })
-    .in('id', unreadIds);
-
-  if (error) {
-    console.warn('Impossible de marquer les messages comme lus :', error.message);
+  const existing = conversations.find(c => c.otherId === toId);
+  if (existing) {
+    await selectConversation(toId);
     return;
   }
 
-  activeConversation.messages.forEach(m => {
-    if (unreadIds.includes(m.id)) {
-      m.read = true;
-      m.delivered = true;
-    }
-  });
-  activeConversation.unread = 0;
-  renderConversations(conversations);
-  renderChat();
-}
-
-// ============ PRÉSENCE / STATUT EN DIRECT ============
-function subscribeToPresence(otherId) {
-  // Se désabonner de l'ancien canal
-  if (presenceChannel) {
-    sb.removeChannel(presenceChannel);
-    presenceChannel = null;
-  }
-
-  presenceChannel = sb.channel(`presence:${otherId}`, {
-    config: { presence: { key: currentUserId } }
-  });
-
-  presenceChannel.on('presence', { event: 'sync' }, () => {
-    const state = presenceChannel.presenceState();
-    let displayStatus = 'En ligne';
-    let found = false;
-
-    for (const [userId, presences] of Object.entries(state)) {
-      if (userId !== currentUserId && presences.length > 0) {
-        const status = presences[0].presence?.status || 'online';
-        found = true;
-        if (status === 'typing') displayStatus = '✏️ En train d\'écrire...';
-        else if (status === 'recording') displayStatus = '🎤 Enregistre un vocal...';
-        else if (status === 'online') displayStatus = '🟢 En ligne';
-        break;
-      }
-    }
-
-    if (activeConversation && activeConversation.otherId === otherId) {
-      document.getElementById('chatTopbarSub').textContent = displayStatus;
-    }
-  });
-
-  presenceChannel.subscribe(async (status) => {
-    if (status === 'SUBSCRIBED') {
-      await presenceChannel.track({ status: 'online' });
-    }
-  });
-}
-
-async function updatePresenceStatus(status) {
-  if (!presenceChannel) return;
+  let otherName = 'Vendeur';
+  let otherAvatar = null;
   try {
-    await presenceChannel.track({ status });
-  } catch (e) {
-    console.warn('Erreur mise à jour présence :', e.message);
+    const { data: profile } = await sb
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', toId)
+      .maybeSingle();
+    if (profile) {
+      otherName = profile.full_name || otherName;
+      otherAvatar = profile.avatar_url || null;
+    }
+  } catch (error) {
+    console.warn('Profil indisponible :', error.message);
   }
+
+  activeConversation = {
+    otherId: toId,
+    otherName,
+    otherAvatar,
+    lastMessage: null,
+    lastDate: new Date().toISOString(),
+    unread: 0,
+    messages: []
+  };
+
+  renderChat();
+  switchChat(toId);
+  subscribeToPresence(toId);
 }
 
-// ============ BASCULE ENTRE VIDE / ACTIF ============
-function switchChat(otherId) {
-  const chatActive = document.getElementById('chatActive');
-  const chatEmpty = document.getElementById('chatEmpty');
-  const sidebar = document.getElementById('chatSidebar');
-  const area = document.getElementById('chatArea');
+// =========================
+//  AFFICHAGE DE LA ZONE DE CHAT
+// =========================
+function renderChat() {
+  const chatMessagesEl = document.getElementById('chatMessages');
+  const chatTitleEl = document.getElementById('chatTopbarName');
+  const chatAvatarEl = document.getElementById('chatTopbarAvatar');
 
-  if (!otherId) {
-    activeConversation = null;
-    chatActive?.classList.add('hidden');
-    chatEmpty?.classList.remove('hidden');
-    if (presenceChannel) {
-      sb.removeChannel(presenceChannel);
-      presenceChannel = null;
-    }
+  if (!activeConversation || !chatMessagesEl) return;
 
-    // --- GESTION MOBILE : réafficher la sidebar ---
-    if (window.innerWidth <= 768) {
-      sidebar?.classList.remove('hidden-mobile');
-      area?.classList.add('hidden-mobile');
-    }
+  if (chatTitleEl) chatTitleEl.textContent = activeConversation.otherName;
+  if (chatAvatarEl) {
+    chatAvatarEl.innerHTML = activeConversation.otherAvatar
+      ? `<img src="${escapeHtml(activeConversation.otherAvatar)}" alt="Avatar">`
+      : escapeHtml(activeConversation.otherName.slice(0, 2).toUpperCase());
+  }
+
+  const visibleMessages = (activeConversation.messages || []).filter(msg => !isMessageHiddenForCurrentUser(msg));
+
+  if (visibleMessages.length === 0) {
+    chatMessagesEl.innerHTML = '<div class="empty-chat-msg"><p>Aucun message dans cette conversation.</p></div>';
+    updateWhatsappSelectionHeader();
     return;
   }
 
-  chatEmpty?.classList.add('hidden');
-  chatActive?.classList.remove('hidden');
+  chatMessagesEl.innerHTML = visibleMessages.map(msg => {
+    const isMine = String(msg.sender_id) === String(currentUserId);
+    const isSelected = selectedMessages.has(msg.id);
 
-  // --- GESTION MOBILE : on ne cache pas la sidebar ici, c'est fait dans selectConversation ---
-}
+    // Conservation de l'alignement droite/gauche sans impacter le style CSS
+    const alignStyle = isMine 
+      ? 'align-self: flex-end; margin-left: auto; margin-right: 0;' 
+      : 'align-self: flex-start; margin-right: auto; margin-left: 0;';
 
-// ============ RENDU DU CHAT (avec statuts et audio) ============
-function renderChat() {
-  if (!activeConversation) return;
-  document.getElementById('chatTopbarName').textContent = activeConversation.otherName;
-  document.getElementById('chatTopbarSub').textContent = 'Dernier message le ' + formatDate(activeConversation.lastDate);
+    const msgClass = (isMine ? 'msg-me' : 'msg-other') + (isSelected ? ' selected' : '');
 
-  const avatarEl = document.getElementById('chatTopbarAvatar');
-  avatarEl.innerHTML = activeConversation.otherAvatar
-    ? `<img src="${escapeHtml(activeConversation.otherAvatar)}" alt="Avatar">`
-    : '';
-
-  document.getElementById('chatTopbarProduct').classList.add('hidden');
-
-  const messagesContainer = document.getElementById('chatMessages');
-  messagesContainer.innerHTML = activeConversation.messages.map(msg => {
-    const isMine = msg.sender_id === currentUserId;
-    let statusHtml = '';
+    // Accusés de réception : 1 trait gris (envoyé), 2 traits gris (reçu), 2 traits bleus (lu)
+    let statusIconHtml = '';
     if (isMine) {
       if (msg.read) {
-        statusHtml = '<i data-lucide="check-check" style="color: #34b7f1; width: 14px; height: 14px;"></i>';
+        statusIconHtml = '<span class="msg-status-read" style="color: #34b7f1; font-weight: bold; margin-left: 3px;">✓✓</span>';
       } else if (msg.delivered) {
-        statusHtml = '<i data-lucide="check-check" style="color: #9ca3af; width: 14px; height: 14px;"></i>';
+        statusIconHtml = '<span class="msg-status-delivered" style="color: currentColor; opacity: 0.6; margin-left: 3px;">✓✓</span>';
       } else {
-        statusHtml = '<i data-lucide="check" style="color: #9ca3af; width: 14px; height: 14px;"></i>';
+        statusIconHtml = '<span class="msg-status-sent" style="color: currentColor; opacity: 0.6; margin-left: 3px;">✓</span>';
       }
     }
 
     let contentHtml = '';
-    if (msg.type === 'audio') {
-      contentHtml = `<audio controls src="${escapeHtml(msg.content)}" style="max-width: 200px; height: 40px;"></audio>`;
+    if (msg.type === 'image') {
+      contentHtml = `<img src="${escapeHtml(msg.content)}" alt="Image" class="chat-img" onclick="window.open('${escapeHtml(msg.content)}', '_blank')">`;
+    } else if (msg.type === 'audio') {
+      contentHtml = `<audio controls preload="metadata" src="${escapeHtml(msg.content)}"></audio>`;
+    } else if (msg.type === 'file') {
+      contentHtml = `<a href="${escapeHtml(msg.content)}" target="_blank" rel="noopener">📄 Télécharger le fichier</a>`;
     } else {
-      contentHtml = `<div class="msg-text">${escapeHtml(msg.content)}</div>`;
+      contentHtml = `<p style="margin:0;">${escapeHtml(msg.content)}</p>`;
     }
 
     return `
-      <div class="msg-bubble ${isMine ? 'mine' : 'other'}">
-        ${contentHtml}
+      <div class="message-bubble ${msgClass}" data-id="${msg.id}" style="${alignStyle}">
+        ${selectionMode ? `<input type="checkbox" class="msg-select-checkbox" ${isSelected ? 'checked' : ''} style="margin-right:8px;" />` : ''}
+        <div class="msg-content">${contentHtml}</div>
         <div class="msg-meta">
-          ${formatTime(msg.created_at)}
-          ${statusHtml}
+          <span class="msg-time">${formatTime(msg.created_at)}</span>
+          ${statusIconHtml}
+          <button class="msg-delete-btn" onclick="event.stopPropagation(); openDeleteMenu('${msg.id}', ${isMine})">⋮</button>
         </div>
-      </div>`;
+      </div>
+    `;
   }).join('');
 
-  lucide.createIcons();
-  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+
+  // Écouteurs pour sélection multiple
+  chatMessagesEl.querySelectorAll('.message-bubble').forEach(el => {
+    let pressTimer;
+    const id = el.dataset.id;
+
+    el.addEventListener('touchstart', () => {
+      pressTimer = setTimeout(() => {
+        selectionMode = true;
+        toggleMessageSelection(id);
+      }, 500);
+    });
+    el.addEventListener('touchend', () => clearTimeout(pressTimer));
+
+    el.addEventListener('click', () => {
+      if (selectionMode) {
+        toggleMessageSelection(id);
+      }
+    });
+    el.addEventListener('dblclick', () => {
+      if (!selectionMode) {
+        selectionMode = true;
+        toggleMessageSelection(id);
+      }
+    });
+  });
+
+  updateWhatsappSelectionHeader();
 }
 
-// ============ ENVOYER UN MESSAGE (TEXTE) ============
+// =========================
+//  SÉLECTION MULTIPLE & ACTION BARRE
+// =========================
+function toggleMessageSelection(id) {
+  if (selectedMessages.has(id)) {
+    selectedMessages.delete(id);
+  } else {
+    selectedMessages.add(id);
+  }
+  if (selectedMessages.size === 0) {
+    selectionMode = false;
+  }
+  renderChat();
+}
+
+function updateWhatsappSelectionHeader() {
+  const chatArea = document.getElementById('chatArea');
+  let bar = document.getElementById('whatsappSelectionHeader');
+
+  if (selectedMessages.size === 0) {
+    if (bar) bar.remove();
+    selectionMode = false;
+    return;
+  }
+
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = 'whatsappSelectionHeader';
+    bar.style.cssText = `
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 60px;
+      background: #075e54;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      z-index: 1000;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    `;
+    if (chatArea) {
+      chatArea.style.position = 'relative';
+      chatArea.appendChild(bar);
+    }
+  }
+
+  const selectedList = Array.from(selectedMessages);
+  const allMine = selectedList.every(id => {
+    const msg = activeConversation?.messages.find(m => m.id === id);
+    return msg && String(msg.sender_id) === String(currentUserId);
+  });
+
+  bar.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;">
+      <button id="cancelSelHeaderBtn" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;">✕</button>
+      <span style="font-weight:600;font-size:16px;">${selectedMessages.size} sélectionné(s)</span>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button id="deleteForMeHeaderBtn" style="background:#dc2626;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Supprimer pour moi</button>
+      ${allMine ? `<button id="deleteForEveryoneHeaderBtn" style="background:#b91c1c;color:white;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Supprimer pour tous</button>` : ''}
+    </div>
+  `;
+
+  document.getElementById('cancelSelHeaderBtn').onclick = () => {
+    selectedMessages.clear();
+    selectionMode = false;
+    renderChat();
+  };
+
+  document.getElementById('deleteForMeHeaderBtn').onclick = () => deleteSelectedMessages('forMe');
+  document.getElementById('deleteForEveryoneHeaderBtn')?.addEventListener('click', () => deleteSelectedMessages('forEveryone'));
+}
+
+async function deleteSelectedMessages(scope) {
+  const ids = Array.from(selectedMessages);
+  if (ids.length === 0) return;
+
+  if (scope === 'forMe') {
+    const updates = ids.map(id => {
+      const msg = activeConversation?.messages.find(m => m.id === id);
+      if (!msg) return null;
+      const isMine = String(msg.sender_id) === String(currentUserId);
+      const column = isMine ? 'deleted_for_sender' : 'deleted_for_recipient';
+      return { id, column };
+    }).filter(Boolean);
+
+    await Promise.all(updates.map(({ id, column }) =>
+      sb.from('messages').update({ [column]: true }).eq('id', id)
+    ));
+  } else {
+    const mineIds = ids.filter(id => {
+      const msg = activeConversation?.messages.find(m => m.id === id);
+      return msg && String(msg.sender_id) === String(currentUserId);
+    });
+
+    if (mineIds.length === 0) {
+      alert('Vous ne pouvez supprimer pour tout le monde que vos propres messages.');
+      return;
+    }
+
+    if (!confirm(`Supprimer ${mineIds.length} message(s) pour tout le monde ?`)) return;
+
+    await Promise.all(mineIds.map(id =>
+      sb.from('messages')
+        .update({ deleted_for_everyone: true, content: '' })
+        .eq('id', id)
+        .eq('sender_id', currentUserId)
+    ));
+  }
+
+  selectedMessages.clear();
+  selectionMode = false;
+  await loadConversations();
+}
+
+// =========================
+//  SUPPRESSION INDIVIDUELLE PERSISTANTE
+// =========================
+function openDeleteMenu(messageId, isMine) {
+  const modal = document.createElement('div');
+  modal.id = 'deleteModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);';
+  modal.innerHTML = `
+    <div style="background:white;padding:24px;border-radius:16px;max-width:300px;width:100%;color:#000;">
+      <h4 style="margin:0 0 12px;">Supprimer ce message ?</h4>
+      <button id="deleteForMeBtn" style="display:block;width:100%;padding:12px;margin-bottom:8px;border:none;border-radius:8px;background:#f3f4f6;cursor:pointer;">Effacer pour moi</button>
+      ${isMine ? `<button id="deleteForEveryoneBtn" style="display:block;width:100%;padding:12px;margin-bottom:8px;border:none;border-radius:8px;background:#fee2e2;color:#b91c1c;cursor:pointer;">Effacer pour tout le monde</button>` : ''}
+      <button id="cancelDeleteBtn" style="display:block;width:100%;padding:12px;border:none;border-radius:8px;background:#e5e7eb;cursor:pointer;">Annuler</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  document.getElementById('deleteForMeBtn').addEventListener('click', async () => {
+    await deleteMessageForMe(messageId, isMine);
+    modal.remove();
+  });
+  document.getElementById('deleteForEveryoneBtn')?.addEventListener('click', async () => {
+    await deleteMessageForEveryone(messageId);
+    modal.remove();
+  });
+  document.getElementById('cancelDeleteBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+async function deleteMessageForMe(messageId, isMine) {
+  const column = isMine ? 'deleted_for_sender' : 'deleted_for_recipient';
+  const { error } = await sb.from('messages').update({ [column]: true }).eq('id', messageId);
+  if (error) {
+    console.error('deleteForMe :', error);
+    alert('Erreur lors de la suppression : ' + error.message);
+    return;
+  }
+  await loadConversations();
+}
+
+async function deleteMessageForEveryone(messageId) {
+  if (!confirm('Ce message sera supprimé pour tous. Continuer ?')) return;
+
+  const msg = activeConversation?.messages.find(m => m.id === messageId);
+
+  const { error } = await sb
+    .from('messages')
+    .update({ deleted_for_everyone: true, content: '' })
+    .eq('id', messageId)
+    .eq('sender_id', currentUserId);
+
+  if (error) {
+    console.error('deleteForEveryone :', error);
+    alert('Erreur lors de la suppression : ' + error.message);
+    return;
+  }
+
+  // Nettoyage optionnel du fichier Storage associé
+  if (msg && (msg.type === 'audio' || msg.type === 'image' || msg.type === 'file') && msg.content) {
+    try {
+      const pathParts = msg.content.split('/voice-notes/');
+      if (pathParts.length > 1) {
+        const filePath = pathParts[1];
+        await sb.storage.from('voice-notes').remove([filePath]);
+      }
+    } catch (err) {
+      console.warn('Nettoyage du Storage ignoré :', err.message);
+    }
+  }
+
+  await loadConversations();
+}
+
+// =========================
+//  ENVOI DE MESSAGES & FICHIERS
+// =========================
 async function sendMessage(event) {
   event.preventDefault();
   if (!activeConversation) return;
@@ -433,79 +592,170 @@ async function sendMessage(event) {
 
   const { error } = await sb.from('messages').insert([message]);
   if (error) {
-    console.error(error);
+    console.error('sendMessage :', error);
+    alert('Impossible d\'envoyer le message.');
     return;
   }
 
   input.value = '';
-  // Après avoir envoyé, on repasse en ligne
   await updatePresenceStatus('online');
 }
 
-// ============ ENREGISTREMENT VOCAL ============
+async function sendFileMessage() {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  if (!file || !activeConversation) return;
 
+  let fileType = 'file';
+  if (file.type.startsWith('image/')) fileType = 'image';
+
+  const safeName = file.name.replace(/[^\w.-]/g, '_');
+  const fileName = `file_${currentUserId}_${Date.now()}_${safeName}`;
+  const filePath = `uploads/${fileName}`;
+
+  try {
+    const { error: uploadError } = await sb.storage
+      .from('voice-notes')
+      .upload(filePath, file, { contentType: file.type, cacheControl: '3600' });
+
+    if (uploadError) {
+      alert('Upload : ' + uploadError.message);
+      return;
+    }
+
+    const { data: { publicUrl } } = sb.storage.from('voice-notes').getPublicUrl(filePath);
+
+    const message = {
+      sender_id: currentUserId,
+      recipient_id: activeConversation.otherId,
+      content: publicUrl,
+      type: fileType,
+      read: false,
+      delivered: false,
+    };
+
+    const { error: insertError } = await sb.from('messages').insert([message]);
+    if (insertError) {
+      alert('Erreur envoi : ' + insertError.message);
+      return;
+    }
+
+    fileInput.value = '';
+  } catch (err) {
+    console.error('sendFileMessage :', err);
+    alert('Erreur lors de l\'envoi du fichier.');
+  }
+}
+
+async function sendAudioMessage(audioUrl) {
+  if (!activeConversation) return;
+
+  const message = {
+    sender_id: currentUserId,
+    recipient_id: activeConversation.otherId,
+    content: audioUrl,
+    type: 'audio',
+    read: false,
+    delivered: false,
+  };
+
+  const { error } = await sb.from('messages').insert([message]);
+  if (error) {
+    console.error('sendAudioMessage :', error);
+    alert('Erreur envoi vocal.');
+  }
+}
+
+// =========================
+//  ENREGISTREMENT VOCAL & ÉGALISEUR
+// =========================
 async function startVoiceRecording() {
   if (isRecording) return;
 
   try {
-    // Demander l'accès au microphone
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder = new MediaRecorder(stream);
-    audioChunks = [];
+    const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+    const mime = mimeTypes.find(t => MediaRecorder.isTypeSupported(t));
+    mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
 
-    // --- INDICATEUR VISUEL ---
+    audioChunks = [];
+    isCancellingRecording = false;
+
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const source = audioContext.createMediaStreamSource(stream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 128;
+    source.connect(analyser);
+    dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    const equalizer = document.getElementById('voiceEqualizer');
+    if (equalizer) equalizer.style.display = 'flex';
+    animateEqualizer();
+
     const voiceBtn = document.getElementById('chatVoiceBtn');
     const input = document.getElementById('chatInput');
     voiceBtn?.classList.add('recording');
-    input.placeholder = '🎙️ Enregistrement en cours... (relâchez pour envoyer)';
-    input.disabled = true;
+    if (input) {
+      input.placeholder = 'Enregistrement... (relâchez pour envoyer)';
+      input.disabled = true;
+    }
 
-    mediaRecorder.ondataavailable = (event) => {
-      audioChunks.push(event.data);
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) audioChunks.push(e.data);
     };
 
     mediaRecorder.onstop = async () => {
-      // Rétablir l'interface
-      input.placeholder = 'Écrire un message...';
-      input.disabled = false;
+      stopEqualizer();
+      if (equalizer) equalizer.style.display = 'none';
+      if (input) {
+        input.placeholder = 'Écrire un message...';
+        input.disabled = false;
+      }
       voiceBtn?.classList.remove('recording');
 
-      if (audioChunks.length === 0) {
-        alert('Aucun son enregistré. Veuillez réessayer.');
-        stream.getTracks().forEach(track => track.stop());
+      if (isCancellingRecording) {
+        stream.getTracks().forEach(t => t.stop());
+        audioChunks = [];
+        isRecording = false;
+        isCancellingRecording = false;
+        await updatePresenceStatus('online');
+        return;
+      }
+
+      const mimeType = mediaRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(audioChunks, { type: mimeType });
+
+      // CONTRÔLE ANTI-0 OCTET (Évite l'erreur HTTP 416)
+      if (blob.size === 0) {
+        console.warn('Vocal vide (0 octet). Envoi annulé.');
+        stream.getTracks().forEach(t => t.stop());
         isRecording = false;
         await updatePresenceStatus('online');
         return;
       }
 
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      const fileName = `voice_${currentUserId}_${Date.now()}.webm`;
+      const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'webm';
+      const fileName = `voice_${currentUserId}_${Date.now()}.${ext}`;
 
-      // Upload vers Supabase Storage
-      const { error: uploadError } = await sb.storage
-        .from('voice-notes')
-        .upload(fileName, audioBlob);
+      try {
+        const { error: uploadError } = await sb.storage
+          .from('voice-notes')
+          .upload(fileName, blob, { contentType: blob.type || mimeType, cacheControl: '3600', upsert: true });
 
-      if (uploadError) {
-        console.error('Erreur upload vocal :', uploadError);
-        alert(`Erreur lors de l'envoi du vocal :\n${uploadError.message || 'Veuillez réessayer.'}`);
-        stream.getTracks().forEach(track => track.stop());
+        if (uploadError) {
+          console.error('Upload vocal :', uploadError);
+          alert('Erreur d\'envoi du vocal : ' + uploadError.message);
+        } else {
+          const { data: { publicUrl } } = sb.storage.from('voice-notes').getPublicUrl(fileName);
+          await sendAudioMessage(publicUrl);
+        }
+      } catch (err) {
+        console.error('Erreur traitement audio :', err);
+      } finally {
+        stream.getTracks().forEach(t => t.stop());
         isRecording = false;
         await updatePresenceStatus('online');
-        return;
       }
-
-      // Récupérer l'URL publique
-      const { data: { publicUrl } } = sb.storage
-        .from('voice-notes')
-        .getPublicUrl(fileName);
-
-      // Envoyer le message vocal
-      await sendAudioMessage(publicUrl);
-
-      stream.getTracks().forEach(track => track.stop());
-      isRecording = false;
-      await updatePresenceStatus('online');
     };
 
     mediaRecorder.start();
@@ -513,71 +763,233 @@ async function startVoiceRecording() {
     await updatePresenceStatus('recording');
 
   } catch (err) {
-    console.error('Erreur microphone :', err);
-    alert('Autorisez l\'accès au microphone pour envoyer un vocal.');
-    // Rétablir l'interface en cas d'erreur
+    console.error('Microphone :', err);
+    alert('Autorisez l\'accès au microphone.');
+    stopEqualizer();
+    const equalizer = document.getElementById('voiceEqualizer');
     const input = document.getElementById('chatInput');
-    input.placeholder = 'Écrire un message...';
-    input.disabled = false;
+    if (equalizer) equalizer.style.display = 'none';
+    if (input) {
+      input.placeholder = 'Écrire un message...';
+      input.disabled = false;
+    }
     document.getElementById('chatVoiceBtn')?.classList.remove('recording');
   }
 }
 
-function cancelRecording() {
-  if (mediaRecorder && isRecording) {
+function stopVoiceRecording() {
+  if (mediaRecorder && isRecording && mediaRecorder.state !== 'inactive') {
     mediaRecorder.stop();
-    mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    document.getElementById('chatVoiceBtn')?.classList.remove('recording');
-    const input = document.getElementById('chatInput');
-    input.placeholder = 'Écrire un message...';
-    input.disabled = false;
-    isRecording = false;
-    audioChunks = [];
-    updatePresenceStatus('online');
   }
 }
 
-// ============ TEMPS RÉEL ============
+function cancelVoiceRecording() {
+  if (mediaRecorder && isRecording && mediaRecorder.state !== 'inactive') {
+    isCancellingRecording = true;
+    mediaRecorder.stop();
+  }
+}
+
+function animateEqualizer() {
+  const bars = document.querySelectorAll('#voiceEqualizer .eq-bar');
+  if (!analyser || !bars.length) return;
+
+  analyser.getByteFrequencyData(dataArray);
+  const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+  const normalized = Math.min(avg / 128, 1);
+
+  bars.forEach(bar => {
+    const height = 5 + normalized * 30 * (0.5 + Math.random() * 0.5);
+    bar.style.height = `${Math.min(height, 40)}px`;
+  });
+
+  animationId = requestAnimationFrame(animateEqualizer);
+}
+
+function stopEqualizer() {
+  if (animationId) {
+    cancelAnimationFrame(animationId);
+    animationId = null;
+  }
+  document.querySelectorAll('#voiceEqualizer .eq-bar').forEach(bar => {
+    bar.style.height = '5px';
+  });
+}
+
+// =========================
+//  ACCUSÉS DE RÉCEPTION & PRÉSENCE
+// =========================
+async function markAllReceivedAsDelivered() {
+  const { error } = await sb
+    .from('messages')
+    .update({ delivered: true })
+    .eq('recipient_id', currentUserId)
+    .eq('delivered', false);
+  if (error) console.warn('delivered :', error.message);
+}
+
+async function markAsRead(otherId) {
+  if (!activeConversation) return;
+  const unreadIds = activeConversation.messages
+    .filter(m => String(m.recipient_id) === String(currentUserId) && !m.read)
+    .map(m => m.id);
+  if (unreadIds.length === 0) return;
+
+  const { error } = await sb
+    .from('messages')
+    .update({ read: true, delivered: true })
+    .in('id', unreadIds);
+  if (error) {
+    console.warn('markAsRead :', error.message);
+    return;
+  }
+
+  activeConversation.messages.forEach(m => {
+    if (unreadIds.includes(m.id)) {
+      m.read = true;
+      m.delivered = true;
+    }
+  });
+  activeConversation.unread = 0;
+  renderConversations(conversations);
+  renderChat();
+}
+
+function subscribeToPresence(otherId) {
+  if (presenceChannel) {
+    sb.removeChannel(presenceChannel);
+    presenceChannel = null;
+  }
+
+  presenceChannel = sb.channel(`presence:${otherId}`, {
+    config: { presence: { key: currentUserId } }
+  });
+
+  presenceChannel.on('presence', { event: 'sync' }, () => {
+    const state = presenceChannel.presenceState();
+    let displayStatus = 'En ligne';
+    for (const [userId, presences] of Object.entries(state)) {
+      if (String(userId) !== String(currentUserId) && presences.length > 0) {
+        const status = presences[0].status || 'online';
+        if (status === 'typing') displayStatus = 'En train d\'écrire...';
+        else if (status === 'recording') displayStatus = 'Enregistre un vocal...';
+        else displayStatus = 'En ligne';
+        break;
+      }
+    }
+    if (activeConversation && activeConversation.otherId === otherId) {
+      const topbarSub = document.getElementById('chatTopbarSub');
+      if (topbarSub) topbarSub.textContent = displayStatus;
+    }
+  });
+
+  presenceChannel.subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      await presenceChannel.track({ status: 'online' });
+    }
+  });
+}
+
+async function updatePresenceStatus(status) {
+  if (!presenceChannel) return;
+  try {
+    await presenceChannel.track({ status });
+  } catch (e) {
+    console.warn('updatePresenceStatus :', e.message);
+  }
+}
+
+// =========================
+//  TEMPS RÉEL (REALTIME)
+// =========================
 function subscribeRealtime() {
   sb.channel('messages-recues')
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages',
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
       filter: `recipient_id=eq.${currentUserId}`
     }, async (payload) => {
       const msg = payload.new;
       if (!msg.delivered) {
         await sb.from('messages').update({ delivered: true }).eq('id', msg.id);
       }
-      loadConversations();
+      await loadConversations();
     })
     .subscribe();
 
   sb.channel('messages-envoyees')
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages',
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
       filter: `sender_id=eq.${currentUserId}`
+    }, () => loadConversations())
+    .subscribe();
+
+  sb.channel('messages-updates')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'messages'
     }, () => loadConversations())
     .subscribe();
 }
 
-// ============ DÉCONNEXION ============
-function logout() {
-  sb.auth.signOut().then(() => { window.location.href = '../index.html'; });
+// =========================
+//  UTILITAIRES & DÉCONNEXION
+// =========================
+function switchChat(otherId) {
+  const chatActive = document.getElementById('chatActive');
+  const chatEmpty = document.getElementById('chatEmpty');
+  const sidebar = document.getElementById('chatSidebar');
+  const area = document.getElementById('chatArea');
+
+  if (!otherId) {
+    activeConversation = null;
+    chatActive?.classList.add('hidden');
+    chatEmpty?.classList.remove('hidden');
+    if (presenceChannel) {
+      sb.removeChannel(presenceChannel);
+      presenceChannel = null;
+    }
+    if (window.innerWidth <= 768) {
+      sidebar?.classList.remove('hidden-mobile');
+      area?.classList.add('hidden-mobile');
+    }
+    renderConversations(conversations);
+    return;
+  }
+
+  chatEmpty?.classList.add('hidden');
+  chatActive?.classList.remove('hidden');
 }
 
-// ============ MENU HAMBURGER ============
+async function logout() {
+  try {
+    await sb.auth.signOut();
+    window.location.href = '../index.html';
+  } catch (err) {
+    console.error('logout :', err);
+    alert('Erreur de déconnexion.');
+  }
+}
+
 function initHamburger() {
   const toggle = document.getElementById('navToggle');
   const menu = document.getElementById('mobileMenu');
-  toggle?.addEventListener('click', () => {
-    const open = menu.classList.toggle('hidden') === false;
-    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-    toggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-    toggle.setAttribute('aria-expanded', String(open));
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener('click', () => {
+    const isOpen = !menu.classList.contains('hidden');
+    menu.classList.toggle('hidden');
+    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', !isOpen);
+    toggle.querySelector('.icon-close')?.classList.toggle('hidden', isOpen);
+    toggle.setAttribute('aria-expanded', String(!isOpen));
   });
 
-  document.addEventListener('click', e => {
-    if (menu && !menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
+  document.addEventListener('click', (e) => {
+    if (!menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
       menu.classList.add('hidden');
       toggle.querySelector('.icon-menu')?.classList.remove('hidden');
       toggle.querySelector('.icon-close')?.classList.add('hidden');
@@ -586,19 +998,38 @@ function initHamburger() {
   });
 }
 
-// ============ UTILITAIRES ============
+function handleResize() {
+  const isMobile = window.innerWidth <= 768;
+  const sidebar = document.getElementById('chatSidebar');
+  const area = document.getElementById('chatArea');
+
+  if (!isMobile) {
+    sidebar?.classList.remove('hidden-mobile');
+    area?.classList.remove('hidden-mobile');
+    return;
+  }
+
+  if (activeConversation) {
+    sidebar?.classList.add('hidden-mobile');
+    area?.classList.remove('hidden-mobile');
+  } else {
+    sidebar?.classList.remove('hidden-mobile');
+    area?.classList.add('hidden-mobile');
+  }
+}
+
 function formatTime(value) {
-  const date = new Date(value);
-  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  try { return new Date(value).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
+  catch { return ''; }
 }
 
 function formatDate(value) {
-  const date = new Date(value);
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  try { return new Date(value).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }); }
+  catch { return ''; }
 }
 
 function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
+  if (!str) return '';
   return String(str).replace(/[&<>"']/g, (tag) => ({
     '&': '&amp;',
     '<': '&lt;',
