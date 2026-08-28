@@ -21,7 +21,44 @@ async function initMessages() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
   currentUserId = session.user.id;
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      // Sur desktop, on enlève les classes hidden-mobile pour tout le monde
+      document.getElementById('chatSidebar')?.classList.remove('hidden-mobile');
+      document.getElementById('chatArea')?.classList.remove('hidden-mobile');
+    } else {
+      // Sur mobile, si une conversation est active, on cache la sidebar
+      if (activeConversation) {
+        document.getElementById('chatSidebar')?.classList.add('hidden-mobile');
+        document.getElementById('chatArea')?.classList.remove('hidden-mobile');
+      } else {
+        document.getElementById('chatSidebar')?.classList.remove('hidden-mobile');
+        document.getElementById('chatArea')?.classList.add('hidden-mobile');
+      }
+    }
+    // Dans initMessages(), après les autres écouteurs
+    window.addEventListener('resize', handleResize);
+  });
+  function handleResize() {
+  const isMobile = window.innerWidth <= 768;
+  const sidebar = document.getElementById('chatSidebar');
+  const area = document.getElementById('chatArea');
 
+  if (!isMobile) {
+    // Desktop : tout afficher
+    sidebar?.classList.remove('hidden-mobile');
+    area?.classList.remove('hidden-mobile');
+  } else {
+    // Mobile : adapter à l'état courant
+    if (activeConversation) {
+      sidebar?.classList.add('hidden-mobile');
+      area?.classList.remove('hidden-mobile');
+    } else {
+      sidebar?.classList.remove('hidden-mobile');
+      area?.classList.add('hidden-mobile');
+    }
+  }
+}
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
   document.getElementById('convSearch')?.addEventListener('input', filterConversations);
@@ -206,8 +243,14 @@ async function selectConversation(otherId) {
   if (!activeConversation) return;
   renderChat();
   switchChat(otherId);
-  subscribeToPresence(otherId); // Démarrer la présence pour cette conversation
+  subscribeToPresence(otherId);
   await markAsRead(otherId);
+
+  // --- GESTION MOBILE ---
+  if (window.innerWidth <= 768) {
+    document.getElementById('chatSidebar')?.classList.add('hidden-mobile');
+    document.getElementById('chatArea')?.classList.remove('hidden-mobile');
+  }
 }
 
 // ============ MARQUER COMME LU ============
@@ -292,6 +335,9 @@ async function updatePresenceStatus(status) {
 function switchChat(otherId) {
   const chatActive = document.getElementById('chatActive');
   const chatEmpty = document.getElementById('chatEmpty');
+  const sidebar = document.getElementById('chatSidebar');
+  const area = document.getElementById('chatArea');
+
   if (!otherId) {
     activeConversation = null;
     chatActive?.classList.add('hidden');
@@ -300,10 +346,19 @@ function switchChat(otherId) {
       sb.removeChannel(presenceChannel);
       presenceChannel = null;
     }
+
+    // --- GESTION MOBILE : réafficher la sidebar ---
+    if (window.innerWidth <= 768) {
+      sidebar?.classList.remove('hidden-mobile');
+      area?.classList.add('hidden-mobile');
+    }
     return;
   }
+
   chatEmpty?.classList.add('hidden');
   chatActive?.classList.remove('hidden');
+
+  // --- GESTION MOBILE : on ne cache pas la sidebar ici, c'est fait dans selectConversation ---
 }
 
 // ============ RENDU DU CHAT (avec statuts et audio) ============
