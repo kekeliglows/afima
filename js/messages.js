@@ -443,69 +443,84 @@ async function sendMessage(event) {
 }
 
 // ============ ENREGISTREMENT VOCAL ============
+
 async function startVoiceRecording() {
   if (isRecording) return;
 
   try {
+    // Demander l'accès au microphone
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
+
+    // --- INDICATEUR VISUEL ---
+    const voiceBtn = document.getElementById('chatVoiceBtn');
+    const input = document.getElementById('chatInput');
+    voiceBtn?.classList.add('recording');
+    input.placeholder = '🎙️ Enregistrement en cours... (relâchez pour envoyer)';
+    input.disabled = true;
 
     mediaRecorder.ondataavailable = (event) => {
       audioChunks.push(event.data);
     };
 
     mediaRecorder.onstop = async () => {
+      // Rétablir l'interface
+      input.placeholder = 'Écrire un message...';
+      input.disabled = false;
+      voiceBtn?.classList.remove('recording');
+
+      if (audioChunks.length === 0) {
+        alert('Aucun son enregistré. Veuillez réessayer.');
+        stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+        await updatePresenceStatus('online');
+        return;
+      }
+
       const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
       const fileName = `voice_${currentUserId}_${Date.now()}.webm`;
 
+      // Upload vers Supabase Storage
       const { error: uploadError } = await sb.storage
         .from('voice-notes')
         .upload(fileName, audioBlob);
 
       if (uploadError) {
         console.error('Erreur upload vocal :', uploadError);
-        alert('Erreur lors de l\'envoi du vocal. Veuillez réessayer.');
+        alert(`Erreur lors de l'envoi du vocal :\n${uploadError.message || 'Veuillez réessayer.'}`);
+        stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+        await updatePresenceStatus('online');
         return;
       }
 
+      // Récupérer l'URL publique
       const { data: { publicUrl } } = sb.storage
         .from('voice-notes')
         .getPublicUrl(fileName);
 
+      // Envoyer le message vocal
       await sendAudioMessage(publicUrl);
 
       stream.getTracks().forEach(track => track.stop());
-      document.getElementById('chatVoiceBtn')?.classList.remove('recording');
       isRecording = false;
       await updatePresenceStatus('online');
     };
 
     mediaRecorder.start();
     isRecording = true;
-    document.getElementById('chatVoiceBtn')?.classList.add('recording');
     await updatePresenceStatus('recording');
 
   } catch (err) {
     console.error('Erreur microphone :', err);
     alert('Autorisez l\'accès au microphone pour envoyer un vocal.');
+    // Rétablir l'interface en cas d'erreur
+    const input = document.getElementById('chatInput');
+    input.placeholder = 'Écrire un message...';
+    input.disabled = false;
+    document.getElementById('chatVoiceBtn')?.classList.remove('recording');
   }
-}
-
-async function sendAudioMessage(audioUrl) {
-  if (!activeConversation) return;
-
-  const message = {
-    sender_id: currentUserId,
-    recipient_id: activeConversation.otherId,
-    content: audioUrl,
-    type: 'audio',
-    read: false,
-    delivered: false,
-  };
-
-  const { error } = await sb.from('messages').insert([message]);
-  if (error) console.error(error);
 }
 
 function cancelRecording() {
@@ -513,6 +528,9 @@ function cancelRecording() {
     mediaRecorder.stop();
     mediaRecorder.stream.getTracks().forEach(track => track.stop());
     document.getElementById('chatVoiceBtn')?.classList.remove('recording');
+    const input = document.getElementById('chatInput');
+    input.placeholder = 'Écrire un message...';
+    input.disabled = false;
     isRecording = false;
     audioChunks = [];
     updatePresenceStatus('online');
