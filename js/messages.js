@@ -277,7 +277,7 @@ async function openConversationFromUrl() {
 // =========================
 //  AFFICHAGE DE LA ZONE DE CHAT
 // =========================
-function renderChat() {
+async function renderChat() {
   const chatMessagesEl = document.getElementById('chatMessages');
   const chatTitleEl = document.getElementById('chatTopbarName');
   const chatAvatarEl = document.getElementById('chatTopbarAvatar');
@@ -298,6 +298,24 @@ function renderChat() {
     updateWhatsappSelectionHeader();
     return;
   }
+
+  // Le bucket voice-notes est privé : on résout les URLs signées de
+  // toutes les pièces jointes AVANT de construire le HTML (une URL
+  // signée ne peut pas être obtenue de façon synchrone).
+  const mediaTypes = ['image', 'audio', 'file'];
+  const signedUrls = {};
+  await Promise.all(
+    visibleMessages
+      .filter(msg => mediaTypes.includes(msg.type) && msg.content)
+      .map(async msg => {
+        try {
+          const { data, error } = await sb.storage.from('voice-notes').createSignedUrl(msg.content, 3600);
+          if (!error && data) signedUrls[msg.id] = data.signedUrl;
+        } catch (e) {
+          console.warn('URL signée indisponible :', e.message);
+        }
+      })
+  );
 
   chatMessagesEl.innerHTML = visibleMessages.map(msg => {
     const isMine = String(msg.sender_id) === String(currentUserId);
@@ -323,12 +341,19 @@ function renderChat() {
     }
 
     let contentHtml = '';
+    const mediaUrl = signedUrls[msg.id] || null;
     if (msg.type === 'image') {
-      contentHtml = `<img src="${escapeHtml(msg.content)}" alt="Image" class="chat-img" onclick="window.open('${escapeHtml(msg.content)}', '_blank')">`;
+      contentHtml = mediaUrl
+        ? `<img src="${escapeHtml(mediaUrl)}" alt="Image" class="chat-img" onclick="window.open('${escapeHtml(mediaUrl)}', '_blank')">`
+        : `<p style="margin:0;font-style:italic;">Image indisponible</p>`;
     } else if (msg.type === 'audio') {
-      contentHtml = `<audio controls preload="metadata" src="${escapeHtml(msg.content)}"></audio>`;
+      contentHtml = mediaUrl
+        ? `<audio controls preload="metadata" src="${escapeHtml(mediaUrl)}"></audio>`
+        : `<p style="margin:0;font-style:italic;">Vocal indisponible</p>`;
     } else if (msg.type === 'file') {
-      contentHtml = `<a href="${escapeHtml(msg.content)}" target="_blank" rel="noopener">📄 Télécharger le fichier</a>`;
+      contentHtml = mediaUrl
+        ? `<a href="${escapeHtml(mediaUrl)}" target="_blank" rel="noopener">📄 Télécharger le fichier</a>`
+        : `<p style="margin:0;font-style:italic;">Fichier indisponible</p>`;
     } else {
       contentHtml = `<p style="margin:0;">${escapeHtml(msg.content)}</p>`;
     }
@@ -550,14 +575,11 @@ async function deleteMessageForEveryone(messageId) {
     return;
   }
 
-  // Nettoyage optionnel du fichier Storage associé
+  // Nettoyage optionnel du fichier Storage associé (content est
+  // désormais directement le chemin dans le bucket privé)
   if (msg && (msg.type === 'audio' || msg.type === 'image' || msg.type === 'file') && msg.content) {
     try {
-      const pathParts = msg.content.split('/voice-notes/');
-      if (pathParts.length > 1) {
-        const filePath = pathParts[1];
-        await sb.storage.from('voice-notes').remove([filePath]);
-      }
+      await sb.storage.from('voice-notes').remove([msg.content]);
     } catch (err) {
       console.warn('Nettoyage du Storage ignoré :', err.message);
     }
@@ -610,8 +632,7 @@ async function sendFileMessage() {
   if (file.type.startsWith('image/')) fileType = 'image';
 
   const safeName = file.name.replace(/[^\w.-]/g, '_');
-  const fileName = `file_${currentUserId}_${Date.now()}_${safeName}`;
-  const filePath = `uploads/${fileName}`;
+  const filePath = `${currentUserId}/file_${Date.now()}_${safeName}`;
 
   try {
     const { error: uploadError } = await sb.storage
@@ -623,12 +644,10 @@ async function sendFileMessage() {
       return;
     }
 
-    const { data: { publicUrl } } = sb.storage.from('voice-notes').getPublicUrl(filePath);
-
     const message = {
       sender_id: currentUserId,
       recipient_id: activeConversation.otherId,
-      content: publicUrl,
+      content: filePath,
       type: fileType,
       read: false,
       delivered: false,
@@ -647,13 +666,13 @@ async function sendFileMessage() {
   }
 }
 
-async function sendAudioMessage(audioUrl) {
+async function sendAudioMessage(filePath) {
   if (!activeConversation) return;
 
   const message = {
     sender_id: currentUserId,
     recipient_id: activeConversation.otherId,
-    content: audioUrl,
+    content: filePath,
     type: 'audio',
     read: false,
     delivered: false,
@@ -735,19 +754,18 @@ async function startVoiceRecording() {
       }
 
       const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'webm';
-      const fileName = `voice_${currentUserId}_${Date.now()}.${ext}`;
+      const filePath = `${currentUserId}/voice_${Date.now()}.${ext}`;
 
       try {
         const { error: uploadError } = await sb.storage
           .from('voice-notes')
-          .upload(fileName, blob, { contentType: blob.type || mimeType, cacheControl: '3600', upsert: true });
+          .upload(filePath, blob, { contentType: blob.type || mimeType, cacheControl: '3600', upsert: true });
 
         if (uploadError) {
           console.error('Upload vocal :', uploadError);
           alert('Erreur d\'envoi du vocal : ' + uploadError.message);
         } else {
-          const { data: { publicUrl } } = sb.storage.from('voice-notes').getPublicUrl(fileName);
-          await sendAudioMessage(publicUrl);
+          await sendAudioMessage(filePath);
         }
       } catch (err) {
         console.error('Erreur traitement audio :', err);
