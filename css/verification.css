@@ -1,0 +1,36 @@
+.verif-en-attente { background: #fef3c7; color: #92400e; }
+.verif-approuve   { background: #dcfce7; color: #166534; }
+.verif-rejete     { background: #fee2e2; color: #991b1b; }
+
+#verifFile { margin-top: 4px; }
+#verifVersoWrapper.hidden { display: none; }
+#verifVersoWrapper { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+
+/* ── Admin : liste des vérifications en attente ── */
+.verif-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+.verif-doc-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: auto;
+}
+.verif-reject-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.verif-reject-form.hidden { display: none; }
+.verif-reject-form textarea {
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+}
+.verif-reject-form button { align-self: flex-start; }

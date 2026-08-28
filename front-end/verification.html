@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Litiges à traiter — Admin afima</title>
+  <title>Vérification d'identité — afima</title>
   <meta name="robots" content="noindex, nofollow">
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
@@ -15,14 +15,15 @@
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/commandes.css">
   <link rel="stylesheet" href="../css/litiges.css">
+  <link rel="stylesheet" href="../css/verification.css">
   <link rel="shortcut icon" href="../assets/logo.png" type="image/x-icon">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="../js/utils/litiges.js"></script>
-  <script src="../js/admin-litiges.js" defer></script>
+  <script src="../js/cart.js"></script>
   <script src="../js/supabase.js"></script>
-  
+  <script src="../js/verification.js"></script>
+  <script src="../js/verification-page.js" defer></script>
 </head>
 <body>
   <header>
@@ -39,13 +40,15 @@
           </a>
         </li>
         <li>
-          <a href="litiges.html" class="btn btn-outline">
-            <i data-lucide="shield-alert"></i> Mes litiges
+          <a href="panier.html" class="btn btn-outline nav-cart">
+            <i data-lucide="shopping-cart"></i>
+            <span class="cart-badge hidden" id="cartBadge">0</span>
+            Panier
           </a>
         </li>
         <li>
-          <a href="admin-litiges.html" class="btn btn-outline active-nav">
-            <i data-lucide="gavel"></i> Litiges à traiter
+          <a href="profil.html" class="btn btn-outline active-nav">
+            <i data-lucide="user"></i> Profil
           </a>
         </li>
         <li>
@@ -63,20 +66,16 @@
 
     <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
       <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-      <a href="litiges.html" class="mobile-link"><i data-lucide="shield-alert"></i> Mes litiges</a>
-      <a href="admin-litiges.html" class="mobile-link"><i data-lucide="gavel"></i> Litiges à traiter</a>
+      <a href="panier.html" class="mobile-link"><i data-lucide="shopping-cart"></i> Panier</a>
+      <a href="profil.html" class="mobile-link"><i data-lucide="user"></i> Profil</a>
       <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
         <i data-lucide="log-out"></i> Déconnexion
       </button>
     </div>
   </header>
 
-  <main class="commandes-main">
-    <h1 class="commandes-title">
-      <i data-lucide="gavel"></i> Litiges à traiter
-    </h1>
-
-    <div id="admin-litiges-list" class="commandes-list" aria-live="polite">
+  <main class="commandes-main litige-main">
+    <div id="verif-content">
       <div class="cmd-skeleton"><div class="skeleton-cmd"></div></div>
     </div>
   </main>

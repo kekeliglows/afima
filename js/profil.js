@@ -1,469 +1,789 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// ============================================================
+// PROFIL UTILISATEUR — LOGIQUE PRINCIPALE
+// ============================================================
+// Dépendances attendues dans profil.html :
+// - supabase.js
+// - verification.js
+// - Lucide
+// ============================================================
 
-const AVATAR_BUCKET = 'avatars';
-const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5 Mo
+// ============================================================
+// CLIENT SUPABASE
+// ============================================================
+
+const profileSupabaseClient =
+  window.supabaseClient ||
+  (typeof supabaseClient !== "undefined" ? supabaseClient : null);
+
+// ============================================================
+// MODULE VERIFICATION (fallback sécurisé)
+// ============================================================
+
+const VerificationAPI =
+  window.Verification ||
+  (typeof Verification !== "undefined" ? Verification : null) || {
+    TYPES: {},
+    STATUTS: {
+      en_attente: { label: "En attente", css: "verif-en-attente" },
+      approuve: { label: "Vérifié", css: "verif-approuve" },
+      rejete: { label: "Rejeté", css: "verif-rejete" },
+    },
+    getMaVerification: async () => null,
+    submitVerification: async () => {
+      throw new Error("Verification non disponible");
+    },
+    getDocumentUrl: async () => null,
+    isAdmin: async () => false,
+    getVerificationsEnAttente: async () => [],
+    decideVerification: async () => {},
+  };
+
+// ============================================================
+// CONFIGURATION
+// ============================================================
+
+const AVATAR_BUCKET = "avatars";
+const ALLOWED_AVATAR_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+];
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+
+// ============================================================
+// ÉTAT GLOBAL
+// ============================================================
 
 let currentUserId = null;
 let currentProfile = null;
+let editMode = false;
+let originalProfileValues = {
+  full_name: "",
+  phone: "",
+  city: "",
+  currency: "EUR",
+  bio: "",
+};
 
-// Indique si l'utilisateur est actuellement en mode édition.
-let isEditingProfile = false;
+// ============================================================
+// INITIALISATION
+// ============================================================
 
-// Copie du profil avant modification.
-// Elle permet de restaurer les valeurs avec "Annuler".
-let originalProfile = null;
-
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   initHamburger();
   initProfile();
 });
 
+// ============================================================
+// INITIALISER LE PROFIL
+// ============================================================
+
 async function initProfile() {
-
-
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    window.location.href = 'login.html';
+  if (!profileSupabaseClient) {
+    console.error("Supabase n'est pas disponible.");
+    showMsg("Connexion à la base de données impossible.", "error");
     return;
   }
 
-  currentUserId = session.user.id;
+  try {
+    await applyPendingProfileIfAny();
 
-  document.getElementById('btnLogout')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutDanger')?.addEventListener('click', logout);
-  document.getElementById('profilForm')?.addEventListener('submit', saveProfile);
-  document.getElementById('avatarFile')?.addEventListener('change', previewAvatar);
-  document.getElementById('btnEditProfile')?.addEventListener('click', enableProfileEdit);
-  document.getElementById('btnCancelEdit')?.addEventListener('click', cancelProfileEdit);
+    const { data: { session }, error } =
+      await profileSupabaseClient.auth.getSession();
+    if (error) throw error;
 
-  await loadProfile(session.user);
-  await loadProductCount(currentUserId);
-  initVendeurModal();
+    if (!session || !session.user) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    currentUserId = session.user.id;
+
+    initProfileEvents();
+    initVendeurModal();
+
+    await loadProfile(session.user);
+    await loadProductCount(currentUserId);
+
+    setEditMode(false);
+    refreshLucideIcons();
+  } catch (error) {
+    console.error("Erreur d'initialisation du profil :", error);
+    showMsg(`Impossible de charger le profil : ${error.message || "erreur inconnue"}`, "error");
+  }
 }
 
+// ============================================================
+// INITIALISER LES ÉVÉNEMENTS DU PROFIL
+// ============================================================
+
+function initProfileEvents() {
+  document.getElementById("btnLogout")?.addEventListener("click", logout);
+  document.getElementById("btnLogoutMobile")?.addEventListener("click", logout);
+  document.getElementById("btnLogoutDanger")?.addEventListener("click", logout);
+
+  document.getElementById("btnEditProfile")?.addEventListener("click", () => setEditMode(true));
+  document.getElementById("btnCancelEdit")?.addEventListener("click", cancelEdit);
+  document.getElementById("profilForm")?.addEventListener("submit", saveProfile);
+  document.getElementById("avatarFile")?.addEventListener("change", previewAvatar);
+}
+
+// ============================================================
+// APPLIQUER LE PROFIL EN ATTENTE (depuis login)
+// ============================================================
+
+async function applyPendingProfileIfAny() {
+  const pending = localStorage.getItem("afima_pending_profile");
+  if (!pending) return;
+
+  try {
+    const profileData = JSON.parse(pending);
+    const { data: { session }, error } = await profileSupabaseClient.auth.getSession();
+    if (error || !session?.user) return;
+
+    const emailName = session.user.email?.split("@")[0] || "Utilisateur";
+    const { error: upsertError } = await profileSupabaseClient
+      .from("profiles")
+      .upsert(
+        {
+          id: session.user.id,
+          full_name: profileData.full_name || emailName,
+          phone: profileData.phone || null,
+          city: profileData.city || null,
+          bio: profileData.bio || null,
+          avatar_url: profileData.avatar_url || null,
+          currency: profileData.currency || "EUR",
+          role: profileData.role || "acheteur",
+        },
+        { onConflict: "id" }
+      );
+
+    if (!upsertError) {
+      localStorage.removeItem("afima_pending_profile");
+    }
+  } catch (error) {
+    console.warn("Impossible d'appliquer le profil temporaire :", error);
+  }
+}
+
+// ============================================================
+// CHARGER LE PROFIL
+// ============================================================
+
 async function loadProfile(sessionUser) {
-  const { data: profile, error } = await sb
-    .from('profiles')
-    .select('full_name, phone, city, bio, avatar_url, updated_at, role, currency')
-    .eq('id', currentUserId)
+  const { data: profile, error } = await profileSupabaseClient
+    .from("profiles")
+    .select("full_name, phone, city, bio, avatar_url, updated_at, role, currency")
+    .eq("id", currentUserId)
     .maybeSingle();
 
   if (error) {
-    showMsg('Impossible de charger le profil.', 'error');
+    console.error("Erreur de chargement du profil :", error);
+    showMsg("Impossible de charger le profil.", "error");
     return;
   }
 
+  const emailName = sessionUser.email?.split("@")[0] || "Utilisateur";
   currentProfile = profile || {
-    full_name: sessionUser.email.split('@')[0],
-    bio: '',
-    phone: '',
-    city: '',
+    full_name: emailName,
+    phone: "",
+    city: "",
+    bio: "",
     avatar_url: null,
-    updated_at: sessionUser.created_at,
-    role: 'acheteur',
-    currency: 'EUR'
+    updated_at: sessionUser.created_at || null,
+    role: "acheteur",
+    currency: "EUR",
   };
-  originalProfile = { ...currentProfile };
 
   if (!profile) {
-    await sb.from('profiles').upsert({
-      id: currentUserId,
-      full_name: currentProfile.full_name,
-      phone: null,
-      city: null,
-      bio: null,
-      avatar_url: null,
-      currency: 'EUR'
-    }, { onConflict: 'id' });
-  }
-
-  const displayName = currentProfile.full_name || sessionUser.email.split('@')[0];
-  document.getElementById('profilNomDisplay').textContent = displayName;
-  startGreetingRefresh('profilNomDisplay', displayName);
-
-  document.getElementById('profilEmailDisplay').textContent = sessionUser.email;
-  document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
-
-  document.getElementById('profilNom').value = currentProfile.full_name || '';
-  document.getElementById('profilTel').value = currentProfile.phone || '';
-  document.getElementById('profilVille').value = currentProfile.city || '';
-  document.getElementById('profilBio').value = currentProfile.bio || '';
-  document.getElementById('profilCurrency').value = currentProfile.currency || 'EUR';
-
-  const memberDate = currentProfile.updated_at || sessionUser.created_at;
-  document.getElementById('profilMembre').textContent = memberDate
-    ? `Membre depuis ${formatDate(memberDate)}`
-    : 'Membre depuis —';
-
-  renderAvatar(currentProfile.avatar_url);
-  updateRoleUI(currentProfile.role);
-  setProfileEditMode(false);
-}
-
-function updateRoleUI(role) {
-  const roleSection = document.getElementById('roleSection');
-  const roleBadge = document.getElementById('profilRoleBadge');
-  const btnDevenirVendeur = document.getElementById('btnDevenirVendeur');
-
-  roleSection.classList.remove('hidden');
-  roleBadge.textContent = role === 'vendeur' ? 'Vendeur' : 'Acheteur';
-  roleBadge.className = 'profil-role-badge ' + (role === 'vendeur' ? 'vendeur' : 'acheteur');
-
-  if (role === 'vendeur') {
-    btnDevenirVendeur.classList.add('hidden');
-  } else {
-    btnDevenirVendeur.classList.remove('hidden');
-  }
-}
-
-async function loadProductCount(userId) {
-  const { count, error } = await sb
-    .from('produits')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId);
-
-  const total = error || count === null ? 0 : count;
-  const countElement = document.getElementById('profilNbProduits');
-  if (countElement) {
-    countElement.textContent = `${total} produit(s)`;
-  }
-}
-
-function renderAvatar(url) {
-  const avatarImg = document.getElementById('avatarImg');
-  const avatarPlaceholder = document.getElementById('avatarPlaceholder');
-
-  if (url && avatarImg) {
-    avatarImg.src = url;
-    avatarImg.classList.remove('hidden');
-    avatarPlaceholder?.classList.add('hidden');
-  } else if (avatarPlaceholder) {
-    avatarImg?.classList.add('hidden');
-    avatarPlaceholder.classList.remove('hidden');
-  }
-}
-
-function validateAvatarFile(file) {
-  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
-    return 'Format non supporté. Utilisez une image JPG, PNG, WEBP ou GIF.';
-  }
-  if (file.size > MAX_AVATAR_SIZE) {
-    return 'Image trop lourde (5 Mo maximum).';
-  }
-  return null;
-}
-
-function previewAvatar() {
-  // Impossible de modifier l'avatar hors du mode édition.
-  if (!isEditingProfile) return;
-
-  const fileInput = document.getElementById('avatarFile');
-  const file = fileInput.files?.[0];
-
-  if (!file) return;
-
-  const errorMsg = validateAvatarFile(file);
-
-  if (errorMsg) {
-    showMsg(errorMsg, 'error');
-    fileInput.value = '';
-    return;
-  }
-
-  const avatarImg = document.getElementById('avatarImg');
-
-  if (avatarImg) {
-    avatarImg.src = URL.createObjectURL(file);
-    avatarImg.classList.remove('hidden');
-
-    document
-      .getElementById('avatarPlaceholder')
-      ?.classList.add('hidden');
-  }
-}
-
-// Extrait le chemin interne au bucket à partir de l'URL publique,
-// pour pouvoir supprimer l'ancien fichier lors d'un remplacement.
-function getStoragePathFromUrl(url) {
-  if (!url) return null;
-  const marker = `/${AVATAR_BUCKET}/`;
-  const idx = url.indexOf(marker);
-  if (idx === -1) return null;
-  return url.slice(idx + marker.length);
-}
-// Active ou désactive le mode édition du profil.
-function setProfileEditMode(editing) {
-  isEditingProfile = editing;
-
-  const fields = [
-    'profilNom',
-    'profilTel',
-    'profilVille',
-    'profilCurrency',
-    'profilBio'
-  ];
-
-  fields.forEach(id => {
-    const field = document.getElementById(id);
-    if (field) {
-      field.disabled = !editing;
+    const { error: createError } = await profileSupabaseClient
+      .from("profiles")
+      .upsert(
+        {
+          id: currentUserId,
+          full_name: currentProfile.full_name,
+          phone: null,
+          city: null,
+          bio: null,
+          avatar_url: null,
+          currency: "EUR",
+          role: "acheteur",
+        },
+        { onConflict: "id" }
+      );
+    if (createError) {
+      console.error("Erreur de création du profil :", createError);
+      showMsg("Impossible de créer votre profil.", "error");
+      return;
     }
+  }
+
+  saveOriginalProfileValues();
+  renderProfile(sessionUser);
+  await updateRoleUI(currentProfile.role);
+}
+
+// ============================================================
+// SAUVEGARDER LES VALEURS ORIGINALES (pour le bouton Annuler)
+// ============================================================
+
+function saveOriginalProfileValues() {
+  originalProfileValues = {
+    full_name: currentProfile?.full_name || "",
+    phone: currentProfile?.phone || "",
+    city: currentProfile?.city || "",
+    currency: currentProfile?.currency || "EUR",
+    bio: currentProfile?.bio || "",
+  };
+}
+
+// ============================================================
+// AFFICHER LE PROFIL
+// ============================================================
+
+function renderProfile(sessionUser) {
+  const displayName = currentProfile?.full_name || sessionUser.email?.split("@")[0] || "Utilisateur";
+  setElementText("profilNomDisplay", displayName);
+  setElementText("profilEmailDisplay", sessionUser.email || "");
+  setElementText("profilBioDisplay", currentProfile?.bio || "Aucune bio renseignée.");
+
+  setElementValue("profilNom", currentProfile?.full_name || "");
+  setElementValue("profilTel", currentProfile?.phone || "");
+  setElementValue("profilVille", currentProfile?.city || "");
+  setElementValue("profilCurrency", currentProfile?.currency || "EUR");
+  setElementValue("profilBio", currentProfile?.bio || "");
+
+  const memberDate = currentProfile?.updated_at || sessionUser.created_at;
+  setElementText("profilMembre", memberDate ? `Membre depuis ${formatDate(memberDate)}` : "Membre depuis —");
+  renderAvatar(currentProfile?.avatar_url);
+}
+
+// ============================================================
+// MODE ÉDITION
+// ============================================================
+
+function setEditMode(enabled) {
+  editMode = enabled;
+  const fieldIds = ["profilNom", "profilTel", "profilVille", "profilCurrency", "profilBio"];
+
+  fieldIds.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = !enabled;
   });
 
-  const editButton = document.getElementById('btnEditProfile');
-  const formActions = document.getElementById('profilFormActions');
-  const title = document.getElementById('profilEditTitle');
-  const description = document.getElementById('profilEditDescription');
+  const avatarFile = document.getElementById("avatarFile");
+  if (avatarFile) avatarFile.disabled = !enabled;
 
-  editButton?.classList.toggle('hidden', editing);
-  formActions?.classList.toggle('hidden', !editing);
+  const btnEdit = document.getElementById("btnEditProfile");
+  if (btnEdit) btnEdit.classList.toggle("hidden", enabled);
 
-  document.querySelectorAll('.edit-only').forEach(element => {
-    element.classList.toggle('visible', editing);
-  });
+  const actions = document.getElementById("profilFormActions");
+  if (actions) actions.classList.toggle("hidden", !enabled);
 
-  if (title) {
-    title.textContent = editing ? 'Modifier mon profil' : 'Mon profil';
-  }
+  const title = document.getElementById("profilEditTitle");
+  if (title) title.textContent = enabled ? "Modifier mon profil" : "Mon profil";
 
-  if (description) {
-    description.textContent = editing
-      ? 'Modifiez vos informations personnelles.'
-      : 'Consultez vos informations personnelles.';
-  }
+  const description = document.getElementById("profilEditDescription");
+  if (description)
+    description.textContent = enabled
+      ? "Modifiez vos informations personnelles."
+      : "Consultez vos informations personnelles.";
+
+  const avatarEdit = document.querySelector(".avatar-edit-btn");
+  if (avatarEdit) avatarEdit.classList.toggle("hidden", !enabled);
 }
 
-// Passe explicitement en mode édition.
-function enableProfileEdit() {
-  if (!currentProfile) return;
+// ============================================================
+// ANNULER LA MODIFICATION
+// ============================================================
 
-  // On reprend toujours les données actuellement enregistrées
-  // comme base avant de commencer une nouvelle modification.
-  originalProfile = { ...currentProfile };
+function cancelEdit() {
+  setElementValue("profilNom", originalProfileValues.full_name);
+  setElementValue("profilTel", originalProfileValues.phone);
+  setElementValue("profilVille", originalProfileValues.city);
+  setElementValue("profilCurrency", originalProfileValues.currency);
+  setElementValue("profilBio", originalProfileValues.bio);
 
-  setProfileEditMode(true);
+  const avatarFile = document.getElementById("avatarFile");
+  if (avatarFile) avatarFile.value = "";
+
+  renderAvatar(currentProfile?.avatar_url);
+  setEditMode(false);
+  hideMsg();
 }
 
-// Annule les modifications et restaure les valeurs originales.
-function cancelProfileEdit() {
-  if (!originalProfile) {
-    setProfileEditMode(false);
-    return;
-  }
+// ============================================================
+// SAUVEGARDER LE PROFIL
+// ============================================================
 
-  document.getElementById('profilNom').value =
-    originalProfile.full_name || '';
-
-  document.getElementById('profilTel').value =
-    originalProfile.phone || '';
-
-  document.getElementById('profilVille').value =
-    originalProfile.city || '';
-
-  document.getElementById('profilBio').value =
-    originalProfile.bio || '';
-
-  document.getElementById('profilCurrency').value =
-    originalProfile.currency || 'EUR';
-
-  // Restaure également l'avatar affiché.
-  renderAvatar(originalProfile.avatar_url);
-
-  // Réinitialise le fichier sélectionné.
-  const avatarFile = document.getElementById('avatarFile');
-  if (avatarFile) {
-    avatarFile.value = '';
-  }
-
-  // Réutilise le profil original comme état courant.
-  currentProfile = { ...originalProfile };
-
-  setProfileEditMode(false);
-}
 async function saveProfile(event) {
   event.preventDefault();
+  if (!editMode) return;
 
-  const fullName = document.getElementById('profilNom').value.trim();
-  const phone = document.getElementById('profilTel').value.trim();
-  const city = document.getElementById('profilVille').value.trim();
-  const bio = document.getElementById('profilBio').value.trim();
-  const currency = document.getElementById('profilCurrency').value;
-  const file = document.getElementById('avatarFile').files?.[0];
-  const btn = document.getElementById('profilSubmit');
-
-  if (file) {
-    const errorMsg = validateAvatarFile(file);
-    if (errorMsg) { showMsg(errorMsg, 'error'); return; }
+  if (!profileSupabaseClient || !currentUserId) {
+    showMsg("Session utilisateur invalide.", "error");
+    return;
   }
 
-  btn.disabled = true;
-  const originalBtnText = btn.innerHTML;
-  btn.textContent = "Enregistrement...";
+  const fullName = getElementValue("profilNom");
+  const phone = getElementValue("profilTel");
+  const city = getElementValue("profilVille");
+  const currency = document.getElementById("profilCurrency")?.value || "EUR";
+  const bio = getElementValue("profilBio");
+  const file = document.getElementById("avatarFile")?.files?.[0] || null;
+
+  if (file) {
+    const avatarError = validateAvatarFile(file);
+    if (avatarError) {
+      showMsg(avatarError, "error");
+      return;
+    }
+  }
+
+  const submitButton = document.getElementById("profilSubmit");
+  if (!submitButton) return;
+
+  const originalButtonHTML = submitButton.innerHTML;
+  submitButton.disabled = true;
+  submitButton.innerHTML = `<span>Enregistrement...</span>`;
 
   try {
     const updates = {
       id: currentUserId,
-      full_name: fullName || currentProfile.full_name || '',
+      full_name: fullName || currentProfile?.full_name || "",
       phone: phone || null,
       city: city || null,
+      currency,
       bio: bio || null,
-      currency: currency,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
+    // Gestion de l'avatar
     if (file) {
-      const oldPath = getStoragePathFromUrl(currentProfile.avatar_url);
+      const oldAvatarPath = getStoragePathFromUrl(currentProfile?.avatar_url);
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const filePath = `${currentUserId}/avatar-${Date.now()}.${extension}`;
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${currentUserId}/avatar-${Date.now()}.${fileExt}`;
-
-      const { error: storageError } = await sb.storage
+      const { error: uploadError } = await profileSupabaseClient.storage
         .from(AVATAR_BUCKET)
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: false, contentType: file.type, cacheControl: "3600" });
+      if (uploadError) throw uploadError;
 
-      if (storageError) throw storageError;
-
-      const { data: urlData } = sb.storage
+      const { data: publicUrlData } = profileSupabaseClient.storage
         .from(AVATAR_BUCKET)
         .getPublicUrl(filePath);
+      if (!publicUrlData?.publicUrl) {
+        throw new Error("Impossible de récupérer l'URL de l'avatar.");
+      }
+      updates.avatar_url = publicUrlData.publicUrl;
 
-      updates.avatar_url = urlData.publicUrl;
-
-      // Nettoyage de l'ancien avatar (best effort, on n'échoue pas
-      // l'enregistrement du profil si ça rate)
-      if (oldPath) {
-        sb.storage.from(AVATAR_BUCKET).remove([oldPath])
-          .catch(err => console.warn('Impossible de supprimer l\'ancien avatar :', err.message));
+      if (oldAvatarPath && oldAvatarPath !== filePath) {
+        await profileSupabaseClient.storage
+          .from(AVATAR_BUCKET)
+          .remove([oldAvatarPath])
+          .catch((err) => console.warn("Ancien avatar non supprimé :", err));
       }
     }
 
-    const { error } = await sb
-      .from('profiles')
-      .upsert(updates, { onConflict: 'id' });
+    const { data: savedProfile, error } = await profileSupabaseClient
+      .from("profiles")
+      .upsert(updates, { onConflict: "id" })
+      .select()
+      .single();
 
     if (error) throw error;
 
-    currentProfile = { ...currentProfile, ...updates };
+    currentProfile = { ...(currentProfile || {}), ...(savedProfile || updates) };
+    saveOriginalProfileValues();
+    renderProfile({ email: document.getElementById("profilEmailDisplay")?.textContent || "" });
+    setEditMode(false);
 
-    document.getElementById('profilNomDisplay').textContent = currentProfile.full_name;
-    document.getElementById('profilBioDisplay').textContent = currentProfile.bio || 'Aucune bio renseignée.';
-    renderAvatar(currentProfile.avatar_url);
+    const avatarInput = document.getElementById("avatarFile");
+    if (avatarInput) avatarInput.value = "";
 
-    localStorage.setItem('afima_currency', updates.currency);
-    // La sauvegarde est terminée : on revient automatiquement
-    // en mode consultation.
-    originalProfile = { ...currentProfile };
-    setProfileEditMode(false);
-
-    showMsg('Profil mis à jour avec succès.', 'success');
-  } catch (err) {
-    showMsg(`Erreur lors de la mise à jour : ${err.message}`, 'error');
+    localStorage.setItem("afima_currency", currentProfile.currency || "EUR");
+    await updateRoleUI(currentProfile.role);
+    showMsg("Profil mis à jour avec succès.", "success");
+  } catch (error) {
+    console.error("Erreur lors de la sauvegarde :", error);
+    showMsg(`Erreur : ${error.message || "erreur inconnue"}`, "error");
   } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalBtnText;
+    submitButton.disabled = false;
+    submitButton.innerHTML = originalButtonHTML;
+    refreshLucideIcons();
   }
 }
 
-function logout() {
-  sb.auth.signOut().then(() => {
-    window.location.href = '../index.html';
-  });
+// ============================================================
+// RÔLE UTILISATEUR
+// ============================================================
+
+async function updateRoleUI(role) {
+  const roleSection = document.getElementById("roleSection");
+  const roleBadge = document.getElementById("profilRoleBadge");
+  const btnSeller = document.getElementById("btnDevenirVendeur");
+  const verificationStatus = document.getElementById("verificationStatus");
+
+  if (roleSection) roleSection.classList.remove("hidden");
+
+  if (roleBadge) {
+    const isSeller = role === "vendeur";
+    roleBadge.textContent = isSeller ? "Vendeur" : "Acheteur";
+    roleBadge.className = `profil-role-badge ${isSeller ? "vendeur" : "acheteur"}`;
+  }
+
+  if (role === "vendeur") {
+    if (btnSeller) btnSeller.classList.add("hidden");
+    if (verificationStatus) await renderVerificationStatus(verificationStatus);
+  } else {
+    if (btnSeller) btnSeller.classList.remove("hidden");
+    if (verificationStatus) verificationStatus.classList.add("hidden");
+  }
 }
 
-function showMsg(text, type) {
-  const box = document.getElementById('profilMessage');
-  if (!box) return;
-  box.textContent = text;
-  box.className = `profil-msg ${type}`;
-  setTimeout(() => {
-    box.className = 'profil-msg hidden';
-  }, 4500);
-}
+// ============================================================
+// STATUT DE VÉRIFICATION
+// ============================================================
 
-function formatDate(value) {
-  const date = new Date(value);
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-}
+async function renderVerificationStatus(container) {
+  if (!container) return;
 
-function initHamburger() {
-  const toggle = document.getElementById('navToggle');
-  const menu = document.getElementById('mobileMenu');
+  try {
+    const verification = await VerificationAPI.getMaVerification({
+      supabaseClient: profileSupabaseClient,
+      userId: currentUserId,
+    });
 
-  toggle?.addEventListener('click', () => {
-    const open = menu.classList.toggle('hidden') === false;
-    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-    toggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-    toggle.setAttribute('aria-expanded', String(open));
-  });
+    container.classList.remove("hidden");
 
-  document.addEventListener('click', e => {
-    if (menu && !menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add('hidden');
-      toggle.querySelector('.icon-menu')?.classList.remove('hidden');
-      toggle.querySelector('.icon-close')?.classList.add('hidden');
-      toggle.setAttribute('aria-expanded', 'false');
+    if (!verification) {
+      container.innerHTML = `<a class="verif-link" href="verification.html">Vérifier mon identité</a>`;
+      return;
     }
-  });
+
+    const status = VerificationAPI.STATUTS?.[verification.statut] || {
+      label: verification.statut || "Statut inconnu",
+      css: "",
+    };
+    const safeLabel = escapeHtml(status.label);
+    const safeCss = escapeHtml(status.css || "");
+
+    if (verification.statut === "rejete") {
+      container.innerHTML = `
+        <span class="verif-badge ${safeCss}">${safeLabel}</span>
+        <a class="verif-link" href="verification.html">Voir le motif et resoumettre</a>
+      `;
+    } else {
+      container.innerHTML = `
+        <a class="verif-link" href="verification.html">
+          <span class="verif-badge ${safeCss}">${safeLabel}</span>
+        </a>
+      `;
+    }
+  } catch (error) {
+    console.warn("Erreur de récupération du statut de vérification :", error);
+    container.classList.remove("hidden");
+    container.innerHTML = `<a class="verif-link" href="verification.html">Vérifier mon identité</a>`;
+  }
 }
 
-// ── MODAL DEVENIR VENDEUR ──
+// ============================================================
+// NOMBRE DE PRODUITS
+// ============================================================
+
+async function loadProductCount(userId) {
+  if (!userId) return;
+
+  const { count, error } = await profileSupabaseClient
+    .from("produits")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+
+  if (error) console.error("Erreur comptage produits :", error);
+  const total = error || count === null ? 0 : count;
+  setElementText("profilNbProduits", `${total} produit(s)`);
+}
+
+// ============================================================
+// AVATAR
+// ============================================================
+
+function renderAvatar(url) {
+  const img = document.getElementById("avatarImg");
+  const placeholder = document.getElementById("avatarPlaceholder");
+  if (!img && !placeholder) return;
+
+  if (url && img) {
+    img.src = url;
+    img.classList.remove("hidden");
+    if (placeholder) placeholder.classList.add("hidden");
+  } else {
+    if (img) img.classList.add("hidden");
+    if (placeholder) placeholder.classList.remove("hidden");
+  }
+}
+
+function previewAvatar() {
+  if (!editMode) return;
+
+  const input = document.getElementById("avatarFile");
+  const file = input?.files?.[0];
+  if (!file) return;
+
+  const error = validateAvatarFile(file);
+  if (error) {
+    showMsg(error, "error");
+    input.value = "";
+    return;
+  }
+
+  const img = document.getElementById("avatarImg");
+  const placeholder = document.getElementById("avatarPlaceholder");
+  if (!img) return;
+
+  if (img.dataset.objectUrl) URL.revokeObjectURL(img.dataset.objectUrl);
+  const objectUrl = URL.createObjectURL(file);
+  img.dataset.objectUrl = objectUrl;
+  img.src = objectUrl;
+  img.classList.remove("hidden");
+  if (placeholder) placeholder.classList.add("hidden");
+}
+
+function validateAvatarFile(file) {
+  if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    return "Format non supporté. Utilisez une image JPG, PNG, WEBP ou GIF.";
+  }
+  if (file.size > MAX_AVATAR_SIZE) {
+    return "Image trop lourde (5 Mo maximum).";
+  }
+  return null;
+}
+
+function getStoragePathFromUrl(url) {
+  if (!url) return null;
+  try {
+    const marker = `/${AVATAR_BUCKET}/`;
+    const index = url.indexOf(marker);
+    if (index === -1) return null;
+    const path = url.slice(index + marker.length);
+    return path.split("?")[0];
+  } catch (error) {
+    console.warn("Impossible d'extraire le chemin Storage :", error);
+    return null;
+  }
+}
+
+// ============================================================
+// MODAL DEVENIR VENDEUR
+// ============================================================
+
 function initVendeurModal() {
-  const modal = document.getElementById('vendeurModal');
-  const btnOpen = document.getElementById('btnDevenirVendeur');
-  const btnClose = document.getElementById('closeVendeurModal');
-  const form = document.getElementById('vendeurForm');
+  const modal = document.getElementById("vendeurModal");
+  const openButton = document.getElementById("btnDevenirVendeur");
+  const closeButton = document.getElementById("closeVendeurModal");
+  const form = document.getElementById("vendeurForm");
 
-  btnOpen?.addEventListener('click', () => {
-    modal.classList.remove('hidden');
-    document.getElementById('vendeurNom').value = document.getElementById('profilNom').value || '';
-    document.getElementById('vendeurTel').value = document.getElementById('profilTel').value || '';
-    document.getElementById('vendeurVille').value = document.getElementById('profilVille').value || '';
+  if (!modal || !form) return;
+
+  openButton?.addEventListener("click", openVendeurModal);
+  closeButton?.addEventListener("click", closeVendeurModal);
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) closeVendeurModal();
   });
+  form.addEventListener("submit", submitVendeurForm);
+}
 
-  btnClose?.addEventListener('click', () => modal.classList.add('hidden'));
-  modal?.addEventListener('click', e => { if (e.target === modal) modal.classList.add('hidden'); });
+function openVendeurModal() {
+  const modal = document.getElementById("vendeurModal");
+  if (!modal) return;
 
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = form.querySelector('button[type="submit"]');
-    btn.disabled = true;
+  setElementValue("vendeurNom", getElementValue("profilNom"));
+  setElementValue("vendeurTel", getElementValue("profilTel"));
+  setElementValue("vendeurVille", getElementValue("profilVille"));
+
+  modal.classList.remove("hidden");
+  refreshLucideIcons();
+}
+
+function closeVendeurModal() {
+  document.getElementById("vendeurModal")?.classList.add("hidden");
+}
+
+async function submitVendeurForm(event) {
+  event.preventDefault();
+
+  if (!profileSupabaseClient || !currentUserId) {
+    showMsg("Session utilisateur invalide.", "error");
+    return;
+  }
+
+  const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  if (!button) return;
+
+  const originalHTML = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = `<span>Enregistrement...</span>`;
+
+  try {
+    const fullName = getElementValue("vendeurNom");
+    const phone = getElementValue("vendeurTel");
+    const city = getElementValue("vendeurVille");
+
+    if (!fullName || !phone) {
+      showMsg("Nom et téléphone sont obligatoires pour devenir vendeur.", "error");
+      return;
+    }
 
     const updates = {
       id: currentUserId,
-      role: 'vendeur',
-      full_name: document.getElementById('vendeurNom').value.trim(),
-      phone: document.getElementById('vendeurTel').value.trim(),
-      city: document.getElementById('vendeurVille').value.trim() || null,
-      updated_at: new Date().toISOString()
+      role: "vendeur",
+      full_name: fullName,
+      phone: phone,
+      city: city || null,
+      updated_at: new Date().toISOString(),
     };
 
-    if (!updates.full_name || !updates.phone) {
-      showMsg('Nom et téléphone sont obligatoires pour devenir vendeur.', 'error');
-      btn.disabled = false;
-      return;
-    }
+    const { data, error } = await profileSupabaseClient
+      .from("profiles")
+      .upsert(updates, { onConflict: "id" })
+      .select()
+      .single();
 
-    const { error } = await sb.from('profiles').upsert(updates, { onConflict: 'id' });
+    if (error) throw error;
 
-    if (error) {
-      showMsg('Erreur : ' + error.message, 'error');
-      btn.disabled = false;
-      return;
-    }
+    currentProfile = { ...(currentProfile || {}), ...(data || updates) };
+    saveOriginalProfileValues();
 
-    currentProfile = { ...currentProfile, ...updates };
-    document.getElementById('profilNom').value = updates.full_name;
-    document.getElementById('profilTel').value = updates.phone || '';
-    document.getElementById('profilVille').value = updates.city || '';
-    document.getElementById('profilNomDisplay').textContent = updates.full_name;
+    setElementValue("profilNom", currentProfile.full_name);
+    setElementValue("profilTel", currentProfile.phone);
+    setElementValue("profilVille", currentProfile.city || "");
+    setElementText("profilNomDisplay", currentProfile.full_name);
 
-    modal.classList.add('hidden');
-    updateRoleUI('vendeur');
-    showMsg('Félicitations ! Vous êtes maintenant vendeur.', 'success');
-    lucide.createIcons();
+    await updateRoleUI("vendeur");
+    closeVendeurModal();
+    showMsg("Félicitations ! Vous êtes maintenant vendeur.", "success");
+    refreshLucideIcons();
+  } catch (error) {
+    console.error("Erreur passage vendeur :", error);
+    showMsg(`Erreur : ${error.message || "erreur inconnue"}`, "error");
+  } finally {
+    button.disabled = false;
+    button.innerHTML = originalHTML;
+  }
+}
+
+// ============================================================
+// HAMBURGER
+// ============================================================
+
+function initHamburger() {
+  const toggle = document.getElementById("navToggle");
+  const menu = document.getElementById("mobileMenu");
+  if (!toggle || !menu) return;
+
+  toggle.addEventListener("click", () => {
+    const opened = menu.classList.toggle("hidden") === false;
+    toggle.querySelector(".icon-menu")?.classList.toggle("hidden", opened);
+    toggle.querySelector(".icon-close")?.classList.toggle("hidden", !opened);
+    toggle.setAttribute("aria-expanded", String(opened));
+    refreshLucideIcons();
   });
+
+  document.addEventListener("click", (event) => {
+    if (menu.classList.contains("hidden")) return;
+    if (toggle.contains(event.target) || menu.contains(event.target)) return;
+    menu.classList.add("hidden");
+    toggle.querySelector(".icon-menu")?.classList.remove("hidden");
+    toggle.querySelector(".icon-close")?.classList.add("hidden");
+    toggle.setAttribute("aria-expanded", "false");
+  });
+}
+
+// ============================================================
+// DÉCONNEXION
+// ============================================================
+
+async function logout() {
+  try {
+    if (!profileSupabaseClient) throw new Error("Supabase indisponible.");
+    const { error } = await profileSupabaseClient.auth.signOut();
+    if (error) throw error;
+  } catch (error) {
+    console.error("Erreur de déconnexion :", error);
+  } finally {
+    window.location.href = "../index.html";
+  }
+}
+
+// ============================================================
+// MESSAGE
+// ============================================================
+
+function showMsg(text, type) {
+  const box = document.getElementById("profilMessage");
+  if (!box) {
+    console[type === "error" ? "error" : "log"](text);
+    return;
+  }
+  box.textContent = text;
+  box.className = `profil-msg ${type}`;
+  clearTimeout(showMsg.timeout);
+  showMsg.timeout = setTimeout(() => {
+    box.className = "profil-msg hidden";
+  }, 4500);
+}
+
+function hideMsg() {
+  const box = document.getElementById("profilMessage");
+  if (box) box.className = "profil-msg hidden";
+}
+
+// ============================================================
+// FORMAT DATE
+// ============================================================
+
+function formatDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+}
+
+// ============================================================
+// UTILITAIRES DOM
+// ============================================================
+
+function getElementValue(id) {
+  const el = document.getElementById(id);
+  return el?.value?.trim() || "";
+}
+
+function setElementValue(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.value = value ?? "";
+}
+
+function setElementText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value ?? "";
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ============================================================
+// LUCIDE
+// ============================================================
+
+function refreshLucideIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
 }

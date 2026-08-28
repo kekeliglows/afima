@@ -258,6 +258,118 @@
   cursor: pointer;
   transition: all 0.2s;
 }
+/* ============================================================
+   FORMULAIRE ADRESSE (modal panier)
+   ============================================================ */
+
+/* ---- Champs de saisie ---- */
+#adresseForm input,
+#adresseForm select,
+#adresseForm textarea {
+  border: 2px solid #d1d5db !important;
+  border-radius: 12px !important;
+  padding: 14px 16px !important;
+  font-size: 1rem !important;
+  background: #ffffff !important;
+  transition: all 0.2s !important;
+  width: 100%;
+}
+
+#adresseForm input:focus,
+#adresseForm select:focus,
+#adresseForm textarea:focus {
+  border-color: #111111 !important;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05) !important;
+  outline: none !important;
+}
+
+/* ---- Labels ---- */
+#adresseForm label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+/* ---- Groupe de champs (espacement) ---- */
+#adresseForm .input-group {
+  margin-bottom: 14px;
+}
+
+/* ---- Ligne double (Ville / Quartier) ---- */
+#adresseForm .addr-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+#adresseForm .addr-row .input-group {
+  margin-bottom: 0;
+}
+
+/* ---- Checkbox "Définir comme adresse par défaut" ---- */
+#adresseForm .checkbox-default {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  margin: 6px 0 16px 0;
+}
+
+#adresseForm .checkbox-default input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: #111111;
+  cursor: pointer;
+}
+
+/* ---- Bouton Enregistrer ---- */
+#adresseForm .submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 20px;
+  background: #111111 !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.2s !important;
+  font-family: inherit;
+}
+
+#adresseForm .submit-btn:hover {
+  background: #333333 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+#adresseForm .submit-btn:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+#adresseForm .submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ---- Responsive : passage en colonne sur mobile ---- */
+@media (max-width: 480px) {
+  #adresseForm .addr-row {
+    grid-template-columns: 1fr;
+  }
+}
 .address-card:hover { border-color: #2563eb; background: #f9fafb; }
 .address-card.selected { border-color: #2563eb; background: #eff6ff; }
 
@@ -267,14 +379,18 @@
 .adresseForm .input-group { margin-bottom: 12px; }
 .adresseForm .input-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 4px; }
 .adresseForm input, .adresseForm select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-family: inherit;
+  padding: 12px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  background: #fafafa;
+  transition: border 0.2s, box-shadow 0.2s;
 }
-.adresseForm input:focus, .adresseForm select:focus { outline: none; border-color: #2563eb; }
+.adresseForm input:focus, .adresseForm select:focus {
+  border-color: #111;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+}
 
 .addr-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 

@@ -4,169 +4,273 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>Mon Profil — afima</title>
-  <meta name="description"
-    content="Gérez votre profil afima : mettez à jour votre nom, téléphone, ville, bio et avatar utilisateur.">
+
+  <meta name="description" content="Gérez votre profil afima : mettez à jour votre nom, téléphone, ville, bio et avatar utilisateur.">
   <meta name="robots" content="noindex, nofollow">
   <link rel="canonical" href="https://afima-ruby.vercel.app/front-end/profil.html">
+
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
   <meta name="theme-color" content="#111111">
+
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/profil.css">
-  <link rel="stylesheet" href="../css/baham.css">
+
+  <!-- Open Graph -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://afima-ruby.vercel.app/front-end/profil.html">
   <meta property="og:title" content="Mon Profil — afima">
-  <meta property="og:description"
-    content="Gérez votre profil vendeur et acheteur sur afima, personnalisez votre page et mettez à jour vos informations.">
+  <meta property="og:description" content="Gérez votre profil vendeur et acheteur sur afima, personnalisez votre page et mettez à jour vos informations.">
   <meta property="og:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <meta property="og:locale" content="fr_FR">
   <meta property="og:site_name" content="afima">
+
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Mon Profil — afima">
   <meta name="twitter:description" content="Gérez votre profil vendeur et achetez sur afima.">
   <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
+
+  <!-- ==========================================================
+       SCRIPTS – Ordre de chargement strict
+       ========================================================== -->
+
+  <!-- 1. Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- 2. Lucide (icônes) -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-  <script src="../js/utils/greeting.js"></script>
+
+  <!-- 3. Utilitaires (dépendances de Cart, Currency, Wishlist) -->
   <script src="../js/utils/currency.js"></script>
-  <script src="../js/utils/baham.js"></script>
-  <script src="../js/baham.js"></script>
+  <script src="../js/utils/wishlist.js"></script>
+  <script src="../js/cart.js"></script>
+
+  <!-- 4. Client Supabase (définit window.supabaseClient) -->
+  <script src="../js/supabase.js"></script>
+
+  <!-- 5. Module de vérification KYC (dépend de supabaseClient) -->
+  <script src="../js/verification.js"></script>
+
+  <!-- 6. Profil (chargé en dernier, avec defer pour attendre le DOM) -->
   <script src="../js/profil.js" defer></script>
+
 </head>
 
 <body>
+
+  <!-- ==========================================================
+       HEADER
+       ========================================================== -->
+
   <header>
     <nav class="navigation" aria-label="Navigation principale">
-      <a href="../index.html" class="logo">
-        <img src="../assets/logo.png" alt="afima Logo" width="36" height="36">
+
+      <!-- Logo -->
+      <a href="../index.html" class="logo" aria-label="Retour à l'accueil afima">
+        <img src="../assets/logo.png" alt="Logo afima" width="36" height="36">
         <span class="logo-text">afima</span>
       </a>
+
+      <!-- Navigation desktop -->
       <ul class="header_btn" id="navLinks">
-        <li><a href="dashboard.html" class="btn btn-outline"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
-        <li><a href="catalogue.html" class="btn btn-outline"><i data-lucide="layout-grid"></i> Catalogue</a></li>
-        <li><a href="messages.html" class="btn btn-outline"><i data-lucide="message-circle"></i> Messages</a></li>
-        <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
+
+        <li>
+          <a href="dashboard.html" class="btn btn-outline">
+            <i data-lucide="layout-dashboard"></i> Dashboard
+          </a>
+        </li>
+
+        <li>
+          <a href="catalogue.html" class="btn btn-outline">
+            <i data-lucide="layout-grid"></i> Catalogue
+          </a>
+        </li>
+
+        <li>
+          <a href="panier.html" class="btn btn-outline">
+            <i data-lucide="shopping-cart"></i> Panier
+          </a>
+        </li>
+
+        <li>
+          <button type="button" class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
+          </button>
+        </li>
+
       </ul>
-      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false"
-        aria-controls="mobileMenu">
+
+      <!-- Bouton menu mobile -->
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
         <i data-lucide="menu" class="icon-menu"></i>
         <i data-lucide="x" class="icon-close hidden"></i>
       </button>
+
     </nav>
+
+    <!-- Menu mobile -->
     <div class="mobile-menu hidden" id="mobileMenu">
-      <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-      <a href="catalogue.html" class="mobile-link"><i data-lucide="layout-grid"></i> Catalogue</a>
-      <a href="messages.html" class="mobile-link"><i data-lucide="message-circle"></i> Messages</a>
-      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i>
-        Déconnexion</button>
+
+      <a href="dashboard.html" class="mobile-link">
+        <i data-lucide="layout-dashboard"></i> Dashboard
+      </a>
+
+      <a href="catalogue.html" class="mobile-link">
+        <i data-lucide="layout-grid"></i> Catalogue
+      </a>
+
+      <a href="panier.html" class="mobile-link">
+        <i data-lucide="shopping-cart"></i> Panier
+      </a>
+
+      <button type="button" class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+
     </div>
   </header>
 
+
+  <!-- ==========================================================
+       CONTENU PRINCIPAL
+       ========================================================== -->
+
   <main class="profil-main">
+
     <div class="profil-layout">
 
-      <!-- Carte profil gauche -->
+
+      <!-- ========================================================
+           CARTE PROFIL (colonne gauche)
+           ======================================================== -->
+
       <aside class="profil-card">
+
+        <!-- Avatar -->
         <div class="avatar-wrapper" id="avatarWrapper">
-          <img id="avatarImg" src="" alt="Avatar" class="avatar-img hidden">
-          <div class="avatar-placeholder" id="avatarPlaceholder">
+
+          <img id="avatarImg" src="" alt="Avatar du profil" class="avatar-img hidden">
+
+          <div class="avatar-placeholder" id="avatarPlaceholder" aria-hidden="true">
             <i data-lucide="user"></i>
           </div>
-          <label
-  class="avatar-edit-btn edit-only"
-  for="avatarFile"
-  title="Changer la photo">
-  <i data-lucide="camera"></i>
-</label>
-          <input type="file" id="avatarFile" accept="image/*" class="hidden" title="Changer la photo de profil"
-            aria-label="Changer la photo de profil">
+
+          <!-- Bouton changement avatar (visible seulement en mode édition) -->
+          <label class="avatar-edit-btn edit-only" for="avatarFile" title="Changer la photo de profil" aria-label="Changer la photo de profil">
+            <i data-lucide="camera"></i>
+          </label>
+
+          <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" title="Changer la photo de profil" aria-label="Changer la photo de profil">
+
         </div>
 
+        <!-- Informations -->
         <h2 id="profilNomDisplay">—</h2>
         <p id="profilEmailDisplay" class="profil-email">—</p>
         <p id="profilBioDisplay" class="profil-bio">—</p>
 
+        <!-- Métadonnées -->
         <div class="profil-meta">
+
           <div class="profil-meta-item">
             <i data-lucide="package"></i>
             <span id="profilNbProduits">0 produit(s)</span>
           </div>
+
           <div class="profil-meta-item">
             <i data-lucide="calendar"></i>
             <span id="profilMembre">Membre depuis —</span>
           </div>
+
         </div>
 
+        <!-- Rôle et vérification -->
         <div id="roleSection" class="profil-role-section hidden">
+
           <span class="profil-role-badge" id="profilRoleBadge">Acheteur</span>
-          <button type="button" id="btnDevenirVendeur" class="btn btn-outline"
-            style="width:100%;justify-content:center;">
+
+          <button type="button" id="btnDevenirVendeur" class="btn btn-outline" style="width:100%;justify-content:center;">
             <i data-lucide="store"></i> Devenir vendeur
           </button>
+
+          <!-- Statut de vérification (affiché si vendeur) -->
+          <div id="verificationStatus" class="hidden" aria-live="polite"></div>
+
         </div>
 
+        <!-- Lien vers le tableau de bord -->
         <a href="dashboard.html" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;">
           <i data-lucide="layout-dashboard"></i> Mon Dashboard
         </a>
+
       </aside>
 
-      <!-- Formulaire édition droite -->
-      <div class="profil-edit">
+
+      <!-- ========================================================
+           ÉDITION DU PROFIL (colonne droite)
+           ======================================================== -->
+
+      <section class="profil-edit">
+
+        <!-- En-tête avec bouton Modifier -->
         <div class="profil-edit-header">
+
           <div>
             <h2 id="profilEditTitle">Mon profil</h2>
             <p id="profilEditDescription">Consultez vos informations personnelles.</p>
           </div>
 
           <button type="button" class="btn btn-outline" id="btnEditProfile">
-            <i data-lucide="pencil"></i>
-            Modifier le profil
+            <i data-lucide="pencil"></i> Modifier le profil
           </button>
+
         </div>
 
-        <div id="profilMessage" class="profil-msg hidden" role="alert"></div>
+        <!-- Message d'état -->
+        <div id="profilMessage" class="profil-msg hidden" role="alert" aria-live="polite"></div>
+
+        <!-- ======================================================
+             FORMULAIRE
+             ====================================================== -->
 
         <form id="profilForm">
+
+          <!-- Nom complet -->
           <div class="input-group">
             <label for="profilNom">Nom complet</label>
             <div class="input-wrap">
               <i data-lucide="user" class="input-icon"></i>
-             <input
-  type="text"
-  id="profilNom"
-  placeholder="Votre nom"
-  autocomplete="name"
-  disabled>
+              <input type="text" id="profilNom" placeholder="Votre nom" autocomplete="name" disabled>
             </div>
           </div>
+
+          <!-- Téléphone -->
           <div class="input-group">
             <label for="profilTel">Téléphone</label>
             <div class="input-wrap">
               <i data-lucide="phone" class="input-icon"></i>
-             <input
-  type="tel"
-  id="profilTel"
-  placeholder="+228 00 00 00 00"
-  autocomplete="tel"
-  disabled>
+              <input type="tel" id="profilTel" placeholder="+228 00 00 00 00" autocomplete="tel" disabled>
             </div>
           </div>
+
+          <!-- Ville -->
           <div class="input-group">
             <label for="profilVille">Ville</label>
             <div class="input-wrap">
               <i data-lucide="map-pin" class="input-icon"></i>
-             <input
-  type="text"
-  id="profilVille"
-  placeholder="Ex : Lomé"
-  disabled>
+              <input type="text" id="profilVille" placeholder="Ex : Lomé" disabled>
             </div>
           </div>
+
+          <!-- Devise préférée -->
           <div class="input-group">
             <label for="profilCurrency">Devise préférée</label>
             <div class="input-wrap">
@@ -178,94 +282,157 @@
                 <option value="MAD">DH Dirham marocain</option>
                 <option value="NGN">₦ Naira nigérian</option>
                 <option value="GHS">GH₵ Cedi ghanéen</option>
+                <option value="USD">$ Dollar américain</option>
+                <option value="TND">DT Dinar tunisien</option>
+                <option value="DZD">DA Dinar algérien</option>
+                <option value="EGP">£ Livre égyptienne</option>
+                <option value="KES">KSh Shilling kényan</option>
+                <option value="ZAR">R Rand sud-africain</option>
               </select>
             </div>
           </div>
+
+          <!-- Bio -->
           <div class="input-group">
             <label for="profilBio">Bio / Description</label>
-           <textarea
-  id="profilBio"
-  placeholder="Parlez de vous ou de votre activité..."
-  rows="4"
-  disabled></textarea>
+            <textarea id="profilBio" placeholder="Parlez de vous ou de votre activité..." rows="4" disabled></textarea>
           </div>
+
+          <!-- Actions du formulaire (visible en mode édition) -->
           <div class="profil-form-actions hidden" id="profilFormActions">
+
             <button type="button" class="btn btn-outline" id="btnCancelEdit">
-              <i data-lucide="x"></i>
-              Annuler
+              <i data-lucide="x"></i> Annuler
             </button>
+
             <button type="submit" class="submit-btn" id="profilSubmit">
               <i data-lucide="save"></i>
               <span>Enregistrer les modifications</span>
             </button>
+
           </div>
+
         </form>
 
-        <!-- Modal devenir vendeur -->
-        <div id="vendeurModal" class="modal hidden">
+
+        <!-- ======================================================
+             MODAL "DEVENIR VENDEUR"
+             ====================================================== -->
+
+        <div id="vendeurModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="vendeurModalTitle">
+
           <div class="modal-content">
+
             <button type="button" id="closeVendeurModal" class="modal-close" aria-label="Fermer">
               <i data-lucide="x"></i>
             </button>
-            <h3><i data-lucide="store"></i> Devenir vendeur</h3>
+
+            <h3 id="vendeurModalTitle">
+              <i data-lucide="store"></i> Devenir vendeur
+            </h3>
+
             <p>Complétez vos informations pour commencer à vendre sur afima.</p>
+
             <form id="vendeurForm">
+
+              <!-- Nom -->
               <div class="input-group">
                 <label for="vendeurNom">Nom complet *</label>
                 <div class="input-wrap">
                   <i data-lucide="user" class="input-icon"></i>
-                  <input type="text" id="vendeurNom" placeholder="Votre nom" required>
+                  <input type="text" id="vendeurNom" placeholder="Votre nom" autocomplete="name" required>
                 </div>
               </div>
+
+              <!-- Téléphone -->
               <div class="input-group">
                 <label for="vendeurTel">Téléphone *</label>
                 <div class="input-wrap">
                   <i data-lucide="phone" class="input-icon"></i>
-                  <input type="tel" id="vendeurTel" placeholder="+225 00 00 00 00" required>
+                  <input type="tel" id="vendeurTel" placeholder="+228 00 00 00 00" autocomplete="tel" required>
                 </div>
               </div>
+
+              <!-- Ville -->
               <div class="input-group">
                 <label for="vendeurVille">Ville</label>
                 <div class="input-wrap">
                   <i data-lucide="map-pin" class="input-icon"></i>
-                  <input type="text" id="vendeurVille" placeholder="Ex : Abidjan">
+                  <input type="text" id="vendeurVille" placeholder="Ex : Lomé" autocomplete="address-level2">
                 </div>
               </div>
+
               <button type="submit" class="submit-btn">
                 <i data-lucide="check"></i>
                 <span>Confirmer</span>
               </button>
+
             </form>
+
           </div>
+
         </div>
+
+
+        <!-- ======================================================
+             ZONE DANGER
+             ====================================================== -->
 
         <div class="profil-danger-zone">
-          <h3><i data-lucide="alert-triangle"></i> Zone de danger</h3>
+
+          <h3>
+            <i data-lucide="alert-triangle"></i> Zone de danger
+          </h3>
+
           <p>La déconnexion mettra fin à votre session sur tous les appareils.</p>
-          <button class="btn-danger-outline" id="btnLogoutDanger">
+
+          <button type="button" class="btn-danger-outline" id="btnLogoutDanger">
             <i data-lucide="log-out"></i> Se déconnecter
           </button>
+
         </div>
-      </div>
+
+      </section>
+
     </div>
+
   </main>
 
+
+  <!-- ==========================================================
+       FOOTER
+       ========================================================== -->
+
   <footer class="footer">
+
     <div class="footer-inner">
+
       <div class="footer-brand">
         <img src="../assets/logo.png" alt="afima">
         <span>afima</span>
       </div>
+
       <p>&copy; 2026 afima. Tous droits réservés.</p>
+
       <div class="footer-links">
         <a href="a-propos.html">À propos</a>
         <a href="faq.html">FAQ</a>
         <a href="conditions-utilisation.html">Conditions d'utilisation</a>
         <a href="politique-confidentialite.html">Politique de confidentialité</a>
       </div>
+
     </div>
+
   </footer>
-  <script>lucide.createIcons();</script>
+
+
+  <!-- Initialisation des icônes -->
+  <script>
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons();
+    }
+  </script>
+
 </body>
 
 </html>

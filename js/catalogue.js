@@ -1,6 +1,8 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+console.log('🔍 Vérification globales catalogue :');
+console.log('supabaseClient:', typeof supabaseClient);
+console.log('Cart:', typeof Cart);
+console.log('Currency:', typeof Currency);
+console.log('Wishlist:', typeof Wishlist);
 
 let allProduits = [];
 let currentUserId = null;

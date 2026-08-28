@@ -1,10 +1,18 @@
+/* ============================================================
+   PROFIL UTILISATEUR – Styles complets
+   ============================================================ */
+
+/* ── CONTENEUR PRINCIPAL ── */
+
 .profil-main {
   flex: 1;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 40px 24px 60px;
+  padding: 28px 18px 56px;
   width: 100%;
 }
+
+/* ── GRILLE ── */
 
 .profil-layout {
   display: grid;
@@ -13,12 +21,13 @@
   align-items: start;
 }
 
-/* ── CARTE PROFIL ── */
+/* ── CARTE PROFIL (colonne gauche) ── */
+
 .profil-card {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 18px;
-  padding: 28px 24px;
+  padding: 32px 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -26,62 +35,131 @@
   text-align: center;
   position: sticky;
   top: 80px;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
-/* Avatar */
+.profil-card:hover {
+  transform: translateY(-4px);
+}
+
+/* ── AVATAR ── */
+
 .avatar-wrapper {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: 112px;
+  height: 112px;
   margin-bottom: 4px;
 }
 
-.avatar-img {
-  width: 96px;
-  height: 96px;
+.avatar-img,
+.avatar-placeholder {
+  width: 112px;
+  height: 112px;
   border-radius: 50%;
-  object-fit: cover;
   border: 3px solid #e5e7eb;
+  object-fit: cover;
 }
-.avatar-img.hidden { display: none; }
+
+.avatar-img.hidden,
+.avatar-placeholder.hidden {
+  display: none;
+}
 
 .avatar-placeholder {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
   background: #f3f4f6;
-  border: 3px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #9ca3af;
 }
-.avatar-placeholder svg { width: 40px; height: 40px; }
-.avatar-placeholder.hidden { display: none; }
+
+.avatar-placeholder svg {
+  width: 40px;
+  height: 40px;
+}
+
+/* Bouton d'édition de l'avatar (visible seulement en mode édition) */
 
 .avatar-edit-btn {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   background: #111;
   border-radius: 50%;
-  display: flex;
+  border: 2px solid #fff;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border: 2px solid #fff;
-  transition: background 0.15s;
+  box-shadow: 0 6px 18px rgba(17, 17, 17, 0.08);
+  transition: background 0.15s ease;
 }
-.avatar-edit-btn:hover { background: #333; }
-.avatar-edit-btn svg { width: 14px; height: 14px; color: #fff; }
 
-.profil-card h2 { font-size: 1.1rem; font-weight: 800; color: #111; }
-.profil-email   { font-size: 0.82rem; color: #6b7280; }
-.profil-bio     { font-size: 0.85rem; color: #4b5563; line-height: 1.5; max-width: 220px; }
+.avatar-edit-btn.hidden {
+  display: none;
+}
 
-.profil-meta { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.avatar-edit-btn:hover {
+  background: #333;
+}
+
+.avatar-edit-btn:focus {
+  outline: 3px solid rgba(17, 17, 17, 0.06);
+}
+
+.avatar-edit-btn svg {
+  width: 14px;
+  height: 14px;
+  color: #fff;
+}
+
+/* Input file masqué */
+
+#avatarFile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── INFOS DU PROFIL ── */
+
+.profil-card h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111;
+}
+
+.profil-email {
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+
+.profil-bio {
+  font-size: 0.85rem;
+  color: #4b5563;
+  line-height: 1.5;
+  max-width: 220px;
+}
+
+/* Métadonnées (membre, produits) */
+
+.profil-meta {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
 .profil-meta-item {
   display: flex;
   align-items: center;
@@ -90,330 +168,15 @@
   color: #6b7280;
   font-weight: 500;
 }
-.profil-meta-item svg { width: 14px; height: 14px; flex-shrink: 0; }
 
-/* ── FORMULAIRE ÉDITION ── */
-.profil-edit {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  overflow: hidden;
-}
-
-.profil-edit-header {
-  padding: 24px 28px 0;
-  margin-bottom: 24px;
-  border-bottom: 1px solid #f3f4f6;
-  padding-bottom: 20px;
-}
-.profil-edit-header h2 { font-size: 1.1rem; font-weight: 800; }
-.profil-edit-header p  { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
-
-.profil-edit form { padding: 0 28px 28px; }
-
-/* Improvements: better avatar sizing, focus states, spacing and responsive tweaks */
-:root {
-  --accent: #111;
-  --muted: #6b7280;
-  --card-bg: #fff;
-}
-
-.profil-main {
-  padding: 28px 18px 56px;
-}
-
-.profil-card {
-  padding: 32px 22px;
-  box-shadow: 0 10px 30px rgba(16,24,40,0.06);
-  transition: transform 0.12s ease, box-shadow 0.12s ease;
-}
-.profil-card:hover { transform: translateY(-4px); }
-
-/* Slightly larger avatar on wider screens */
-.avatar-wrapper {
-  width: 112px;
-  height: 112px;
-}
-.avatar-img, .avatar-placeholder {
-  width: 112px;
-  height: 112px;
-}
-/* Cible spécifiquement l'input de fichier de l'avatar par son ID */
-#avatarFile {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap; /* Ajouté pour la compatibilité */
-    border: 0;
-}
-.avatar-edit-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  border: 2px solid #fff;
-  box-shadow: 0 6px 18px rgba(17,17,17,0.08);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.avatar-edit-btn:focus { outline: 3px solid rgba(17,17,17,0.06); }
-
-.profil-edit { padding-bottom: 28px; }
-.edit-only {
-  display: none;
-}
-
-/* Inputs clearer focus and slightly larger touch targets */
-.input-wrap input,
-.input-group textarea {
-  padding: 14px 16px 14px 44px;
-  font-size: 0.97rem;
-}
-.input-wrap input:focus,
-.input-group textarea:focus {
-  border-color: var(--accent);
-  box-shadow: 0 6px 20px rgba(17,17,17,0.06);
-}
-/* ── MODE CONSULTATION / ÉDITION ── */
-
-/* Les champs verrouillés ressemblent à des informations consultables. */
-.input-wrap input:disabled,
-.input-wrap select:disabled,
-.input-group textarea:disabled {
-  background: #f8f9fa;
-  color: #374151;
-  border-color: #e5e7eb;
-  cursor: default;
-  opacity: 1;
-}
-
-/* Aucun effet de focus sur les champs non éditables. */
-.input-wrap input:disabled:focus,
-.input-wrap select:disabled:focus,
-.input-group textarea:disabled:focus {
-  border-color: #e5e7eb;
-  box-shadow: none;
-}
-
-/* Les éléments réservés au mode édition sont masqués par défaut. */
-.edit-only {
-  display: none;
-}
-
-/* Ils deviennent visibles lorsque le mode édition est activé. */
-.edit-only.visible {
-  display: flex;
-}
-
-/* Boutons d'action du formulaire. */
-.profil-form-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.profil-form-actions.hidden {
-  display: none;
-}
-
-.profil-form-actions .btn-outline {
-  flex: 1;
-}
-
-.profil-form-actions .submit-btn {
-  flex: 2;
-}
-
-/* Le bouton Modifier dans l'en-tête. */
-.profil-edit-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.profil-edit-header .btn {
+.profil-meta-item svg {
+  width: 14px;
+  height: 14px;
   flex-shrink: 0;
 }
 
-/* Sur petit écran, les actions passent proprement à la ligne. */
-@media (max-width: 480px) {
-  .profil-edit-header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .profil-form-actions {
-    flex-direction: column;
-  }
-
-  .profil-form-actions .btn-outline,
-  .profil-form-actions .submit-btn {
-    width: 100%;
-    flex: none;
-  }
-}
-/* Submit button: more prominent on mobile */
-.submit-btn { padding: 14px; }
-
-/* Danger zone: subtle visual separation */
-.profil-danger-zone { border-left: 4px solid #fecaca; }
-
-/* Responsive tweaks */
-@media (max-width: 900px) {
-  .profil-layout { grid-template-columns: 1fr; }
-  .avatar-wrapper { margin: 0 auto; }
-  .profil-card { position: static; }
-}
-
-@media (min-width: 1100px) {
-  .profil-layout { grid-template-columns: 320px 1fr; }
-}
-
-.input-group { margin-bottom: 18px; display: flex; flex-direction: column; gap: 7px; }
-.input-group label { font-size: 0.82rem; font-weight: 700; color: #111; }
-
-.input-wrap { position: relative; display: flex; align-items: center; }
-.input-icon { position: absolute; left: 14px; width: 15px; height: 15px; color: #9ca3af; pointer-events: none; }
-
-.input-wrap input,
-.input-group textarea {
-  width: 100%;
-  padding: 12px 14px 12px 40px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-family: inherit;
-  outline: none;
-  background: #fafafa;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.input-wrap select {
-  width: 100%;
-  padding: 12px 40px 12px 40px;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 10px;
-  font-size: 0.92rem;
-  font-family: inherit;
-  outline: none;
-  background: #fafafa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23111111' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center;
-  background-size: 12px;
-  padding-right: 40px;
-  cursor: pointer;
-  appearance: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.input-group textarea { padding: 12px 14px; resize: vertical; min-height: 100px; }
-.input-wrap input:focus,
-.input-wrap select:focus,
-.input-group textarea:focus { border-color: #111; background-color: #fff; box-shadow: 0 0 0 3px rgba(17,17,17,0.06); }
-
-.input-wrap select:hover {
-  border-color: #d1d5db;
-}
-
-.input-wrap select option {
-  padding: 8px 12px;
-  background: #fff;
-  color: #111;
-  font-size: 0.92rem;
-  font-weight: 500;
-}
-
-.input-wrap select option:checked {
-  background: linear-gradient(#e5e7eb, #e5e7eb);
-  background-color: #e5e7eb;
-  color: #111;
-}
-
-.submit-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 13px;
-  background: #111;
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-  margin-top: 4px;
-}
-.submit-btn svg { width: 16px; height: 16px; }
-.submit-btn:hover { background: #333; transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.15); }
-.submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* ── MESSAGE ── */
-.profil-msg {
-  margin: 0 28px 16px;
-  padding: 12px 16px;
-  border-radius: 10px;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-.profil-msg.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-.profil-msg.error   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-.profil-msg.hidden  { display: none; }
-
-/* ── ZONE DANGER ── */
-.profil-danger-zone {
-  margin: 0 28px 28px;
-  padding: 20px;
-  border: 1.5px solid #fecaca;
-  border-radius: 12px;
-  background: #fef2f2;
-}
-.profil-danger-zone h3 {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 0.9rem;
-  font-weight: 800;
-  color: #dc2626;
-  margin-bottom: 6px;
-}
-.profil-danger-zone h3 svg { width: 16px; height: 16px; }
-.profil-danger-zone p { font-size: 0.82rem; color: #6b7280; margin-bottom: 14px; }
-
-.btn-danger-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 18px;
-  border: 1.5px solid #dc2626;
-  border-radius: 9px;
-  background: transparent;
-  color: #dc2626;
-  font-size: 0.875rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.18s;
-}
-.btn-danger-outline svg { width: 15px; height: 15px; }
-.btn-danger-outline:hover { background: #dc2626; color: #fff; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .profil-layout { grid-template-columns: 1fr; }
-  .profil-card { position: static; }
-}
-@media (max-width: 480px) {
-  .profil-edit form, .profil-edit-header, .profil-danger-zone, .profil-msg { padding-left: 20px; padding-right: 20px; }
-}
-
 /* ── BADGE RÔLE ── */
+
 .profil-role-section {
   width: 100%;
   display: flex;
@@ -421,6 +184,10 @@
   align-items: center;
   gap: 10px;
   margin-top: 12px;
+}
+
+.profil-role-section.hidden {
+  display: none;
 }
 
 .profil-role-badge {
@@ -445,11 +212,357 @@
   color: #111;
 }
 
-/* ── MODAL ── */
+/* ── VÉRIFICATION D'IDENTITÉ ── */
+
+#verificationStatus {
+  width: 100%;
+  text-align: center;
+}
+
+#verificationStatus.hidden {
+  display: none;
+}
+
+/* Badges de statut de vérification */
+
+.verif-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.verif-en-attente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.verif-approuve {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.verif-rejete {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Lien "Vérifier mon identité" */
+
+.verif-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #111;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.verif-link:hover {
+  color: #2563eb;
+}
+
+/* ── FORMULAIRE D'ÉDITION (colonne droite) ── */
+
+.profil-edit {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  overflow: hidden;
+  padding-bottom: 28px;
+}
+
+.profil-edit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 24px 28px 20px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.profil-edit-header > div {
+  flex: 1;
+}
+
+.profil-edit-header h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.profil-edit-header p {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.profil-edit-header .btn {
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+.profil-edit form {
+  padding: 0 28px 28px;
+}
+
+/* ── CHAMPS DE SAISIE ── */
+
+.input-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.input-group label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111;
+}
+
+.input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  width: 15px;
+  height: 15px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.input-wrap input,
+.input-group textarea,
+.input-wrap select {
+  width: 100%;
+  padding: 12px 14px 12px 40px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  background: #fafafa;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.input-group textarea {
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.input-wrap select {
+  padding: 12px 40px;
+  background-color: #fafafa;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23111111' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 12px;
+  cursor: pointer;
+  appearance: none;
+}
+
+.input-wrap select option {
+  padding: 8px 12px;
+  background: #fff;
+  color: #111;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.input-wrap select option:checked {
+  background: #e5e7eb;
+  color: #111;
+}
+
+.input-wrap select:hover {
+  border-color: #d1d5db;
+}
+
+.input-wrap input:focus,
+.input-wrap select:focus,
+.input-group textarea:focus {
+  border-color: #111;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.06);
+}
+
+/* ── CHAMPS DÉSACTIVÉS ── */
+
+.input-wrap input:disabled,
+.input-wrap select:disabled,
+.input-group textarea:disabled {
+  background: #f3f4f6;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.input-wrap input:disabled:hover,
+.input-wrap select:disabled:hover,
+.input-group textarea:disabled:hover {
+  border-color: #e5e7eb;
+}
+
+/* ── ACTIONS DU FORMULAIRE (mode édition) ── */
+
+.profil-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.profil-form-actions.hidden {
+  display: none;
+}
+
+.profil-form-actions .btn {
+  flex: 0 1 auto;
+}
+
+.profil-form-actions .submit-btn {
+  flex: 1;
+}
+
+/* ── BOUTON ENREGISTRER ── */
+
+.submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.submit-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.submit-btn:hover {
+  background: #333;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ── MESSAGES ── */
+
+.profil-msg {
+  margin: 0 28px 16px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.profil-msg.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+}
+
+.profil-msg.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.profil-msg.hidden {
+  display: none;
+}
+
+/* ── ZONE DANGER ── */
+
+.profil-danger-zone {
+  margin: 0 28px 28px;
+  padding: 20px;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  background: #fef2f2;
+  border-left: 4px solid #fecaca;
+}
+
+.profil-danger-zone h3 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #dc2626;
+  margin-bottom: 6px;
+}
+
+.profil-danger-zone h3 svg {
+  width: 16px;
+  height: 16px;
+}
+
+.profil-danger-zone p {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border: 1.5px solid #dc2626;
+  border-radius: 9px;
+  background: transparent;
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.18s ease;
+}
+
+.btn-danger-outline svg {
+  width: 15px;
+  height: 15px;
+}
+
+.btn-danger-outline:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* ── MODAL (Devenir vendeur) ── */
+
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -457,7 +570,9 @@
   padding: 20px;
 }
 
-.modal.hidden { display: none; }
+.modal.hidden {
+  display: none;
+}
 
 .modal-content {
   background: #fff;
@@ -470,8 +585,15 @@
 }
 
 @keyframes modalIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-close {
@@ -484,8 +606,15 @@
   color: #9ca3af;
   padding: 4px;
 }
-.modal-close:hover { color: #111; }
-.modal-close svg { width: 20px; height: 20px; }
+
+.modal-close:hover {
+  color: #111;
+}
+
+.modal-close svg {
+  width: 20px;
+  height: 20px;
+}
 
 .modal-content h3 {
   display: flex;
@@ -495,10 +624,86 @@
   font-weight: 800;
   margin-bottom: 6px;
 }
-.modal-content h3 svg { width: 20px; height: 20px; color: #111; }
+
+.modal-content h3 svg {
+  width: 20px;
+  height: 20px;
+  color: #111;
+}
 
 .modal-content > p {
   font-size: 0.85rem;
   color: #6b7280;
   margin-bottom: 20px;
+}
+
+/* ── RESPONSIVE ── */
+
+@media (max-width: 900px) {
+  .profil-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar-wrapper {
+    margin: 0 auto;
+  }
+
+  .profil-card {
+    position: static;
+  }
+
+  .profil-edit-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .profil-edit-header .btn {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .profil-main {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .profil-card {
+    padding: 26px 18px;
+  }
+
+  .profil-edit form,
+  .profil-edit-header {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .profil-danger-zone {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .profil-msg {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+
+  .profil-form-actions {
+    flex-direction: column;
+  }
+
+  .profil-form-actions .btn,
+  .profil-form-actions .submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .modal {
+    padding: 12px;
+  }
+
+  .modal-content {
+    padding: 24px 20px;
+  }
 }

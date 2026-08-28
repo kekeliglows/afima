@@ -1,6 +1,3 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Clé publique Kkiapay (PAS la clé secrète — celle-ci ne doit jamais
 // apparaître côté client). Passer à false en production.

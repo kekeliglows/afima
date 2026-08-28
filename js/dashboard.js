@@ -50,20 +50,24 @@ async function init() {
 }
 
 async function loadStats() {
-  // Toutes les stats sont calculées côté serveur — le client ne reçoit
-  // jamais les commandes/lignes brutes d'autres vendeurs.
-  const { data, error } = await sb.rpc('get_seller_stats');
-  if (error) {
-    console.warn('Erreur chargement statistiques :', error.message);
-    return;
-  }
-
-  document.getElementById('statProduits').textContent = data.nb_produits;
-  document.getElementById('statVentes').textContent   = data.ventes;
-  document.getElementById('statRevenu').textContent   = formatPriceValue(data.revenu);
-  document.getElementById('statCaMois').textContent   = formatPriceValue(data.ca_mois);
-  document.getElementById('statRupture').textContent  = data.ruptures;
-  document.getElementById('statVues').textContent     = data.vues;
+    try {
+        const { data, error } = await sb.rpc('get_seller_stats', {
+            p_user_id: currentUserId
+        });
+        if (error) throw error;
+        const stats = data && data[0] ? data[0] : {
+            nb_produits: 0, ventes: 0, revenu: 0, ca_mois: 0, ruptures: 0, vues: 0
+        };
+        document.getElementById('statProduits').textContent = stats.nb_produits;
+        document.getElementById('statVentes').textContent   = stats.ventes;
+        document.getElementById('statRevenu').textContent   = formatPriceValue(stats.revenu);
+        document.getElementById('statCaMois').textContent   = formatPriceValue(stats.ca_mois);
+        document.getElementById('statRupture').textContent  = stats.ruptures;
+        document.getElementById('statVues').textContent     = stats.vues;
+    } catch (err) {
+        console.warn('Erreur chargement statistiques :', err.message);
+        showMsg('Impossible de charger les statistiques.', 'error');
+    }
 }
 
 async function loadProduits() {

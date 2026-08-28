@@ -1,6 +1,7 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── SUPPRIMEZ TOUS LES IMPORTS EN HAUT ──
+// Ne pas utiliser : import { supabaseClient } from './supabase.js';
+// Les variables sont déjà globales via les scripts chargés dans le HTML
 
 // ── ÉCHAPPEMENT HTML (anti-XSS) ──
 function escapeHtml(str) {
@@ -13,7 +14,7 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ── HAMBURGER ──
+// ── HAMBURGER ── (INTACT, NON MODIFIÉ)
 const navToggle  = document.getElementById('navToggle');
 const mobileMenu = document.getElementById('mobileMenu');
 navToggle?.addEventListener('click', () => {

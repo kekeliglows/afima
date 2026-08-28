@@ -1,0 +1,166 @@
+const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── HAMBURGER ──
+const navToggle  = document.getElementById('navToggle');
+const mobileMenu = document.getElementById('mobileMenu');
+navToggle?.addEventListener('click', () => {
+  const open = mobileMenu.classList.toggle('hidden') === false;
+  navToggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
+  navToggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
+  navToggle.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', e => {
+  if (mobileMenu && !mobileMenu.classList.contains('hidden') &&
+      !navToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
+    mobileMenu.classList.add('hidden');
+    navToggle.querySelector('.icon-menu')?.classList.remove('hidden');
+    navToggle.querySelector('.icon-close')?.classList.add('hidden');
+    navToggle.setAttribute('aria-expanded', 'false');
+  }
+});
+
+async function renderListe() {
+  const verifs = await Verification.getVerificationsEnAttente({ supabaseClient });
+  const list = document.getElementById('admin-verifs-list');
+
+  if (verifs.length === 0) {
+    list.innerHTML = `<div class="commandes-empty"><p>Aucune vérification en attente.</p></div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  list.innerHTML = verifs.map(v => {
+    const date = new Date(v.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const nomVendeur = v.profiles?.full_name || 'Vendeur';
+    const typeLabel = Verification.TYPES[v.type_document] || v.type_document;
+
+    return `
+      <div class="commande-card litige-detail-card" data-verif-id="${escapeHtml(v.id)}">
+        <div class="commande-item">
+          <div class="commande-item-info">
+            <p class="commande-item-titre">${escapeHtml(nomVendeur)}</p>
+            <p class="commande-item-detail">${escapeHtml(typeLabel)} · envoyé le ${date}</p>
+          </div>
+          <div class="verif-doc-buttons">
+            <button type="button" class="btn btn-outline btn-voir-doc" data-path="${escapeHtml(v.document_path)}">
+              <i data-lucide="eye"></i> Voir le recto
+            </button>
+            ${v.document_path_verso ? `
+            <button type="button" class="btn btn-outline btn-voir-doc" data-path="${escapeHtml(v.document_path_verso)}">
+              <i data-lucide="eye"></i> Voir le verso
+            </button>` : ''}
+          </div>
+        </div>
+
+        <div class="verif-actions">
+          <button type="button" class="btn btn-primary btn-approuver" data-id="${escapeHtml(v.id)}">
+            <i data-lucide="check"></i> Approuver
+          </button>
+          <button type="button" class="btn btn-outline btn-rejeter-toggle" data-id="${escapeHtml(v.id)}">
+            <i data-lucide="x"></i> Rejeter
+          </button>
+        </div>
+
+        <div class="verif-reject-form hidden" id="rejectForm-${escapeHtml(v.id)}">
+          <textarea placeholder="Motif du rejet (visible par le vendeur)" rows="2"></textarea>
+          <button type="button" class="btn btn-primary btn-confirmer-rejet" data-id="${escapeHtml(v.id)}">Confirmer le rejet</button>
+        </div>
+
+        <p class="litige-msg hidden" id="verifMsg-${escapeHtml(v.id)}"></p>
+      </div>`;
+  }).join('');
+
+  lucide.createIcons();
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll('.btn-voir-doc').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const card = btn.closest('[data-verif-id]');
+      const msgEl = card?.querySelector('.litige-msg');
+      try {
+        const url = await Verification.getDocumentUrl({ supabaseClient, filePath: btn.dataset.path });
+        window.open(url, '_blank', 'noopener');
+      } catch (err) {
+        if (msgEl) {
+          msgEl.textContent = 'Impossible d\'ouvrir le document : ' + (err.message || 'erreur inconnue.');
+          msgEl.className = 'litige-msg litige-msg-error';
+          msgEl.classList.remove('hidden');
+        }
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-approuver').forEach(btn => {
+    btn.addEventListener('click', () => decider(btn.dataset.id, true));
+  });
+
+  document.querySelectorAll('.btn-rejeter-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById(`rejectForm-${btn.dataset.id}`).classList.toggle('hidden');
+    });
+  });
+
+  document.querySelectorAll('.btn-confirmer-rejet').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const form = document.getElementById(`rejectForm-${btn.dataset.id}`);
+      const motif = form.querySelector('textarea').value.trim();
+      if (!motif) {
+        form.querySelector('textarea').focus();
+        return;
+      }
+      decider(btn.dataset.id, false, motif);
+    });
+  });
+}
+
+async function decider(verificationId, approuve, motifRejet) {
+  const msgEl = document.getElementById(`verifMsg-${verificationId}`);
+  try {
+    await Verification.decideVerification({ supabaseClient, verificationId, approuve, motifRejet });
+    await renderListe(); // recharge la liste (la ligne traitée disparaît)
+  } catch (err) {
+    if (msgEl) {
+      msgEl.textContent = 'Erreur : ' + (err.message || 'action impossible.');
+      msgEl.className = 'litige-msg litige-msg-error';
+      msgEl.classList.remove('hidden');
+    }
+  }
+}
+
+async function init() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) { window.location.href = 'login.html'; return; }
+
+  const admin = await Verification.isAdmin({ supabaseClient, userId: session.user.id });
+  if (!admin) {
+    document.getElementById('admin-verifs-list').innerHTML = `
+      <div class="commandes-empty">
+        <p>Accès réservé à l'équipe afima.</p>
+        <a href="../index.html" class="btn btn-primary">Retour à l'accueil</a>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
+  document.getElementById('btnLogout')?.addEventListener('click', logout);
+  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
+
+  await renderListe();
+}
+
+init();
