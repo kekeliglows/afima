@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&display=swap');
+
 :root {
   --primary:      #111111;
   --primary-hover:#333333;
@@ -90,11 +92,42 @@ header {
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
   text-decoration: none;
 }
-.logo img { height: 34px; object-fit: contain; }
-.logo-text { font-size: 1.25rem; font-weight: 900; color: var(--primary); letter-spacing: -0.5px; }
+.logo-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.4px;
+  color: #e08e00;
+  display: inline-flex;
+  align-items: baseline;
+}
+.logo-i {
+  position: relative;
+  display: inline-block;
+  width: 0.28em;
+}
+.logo-i-dot {
+  position: absolute;
+  left: 50%;
+  top: 0.02em;
+  width: 0.18em;
+  height: 0.18em;
+  background: #8a5700;
+  border-radius: 2px;
+  transform: translateX(-50%) rotate(45deg);
+}
+.logo-i-stem {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0.11em;
+  height: 0.42em;
+  background: #e08e00;
+  border-radius: 1px;
+  transform: translateX(-50%);
+}
 
 .header_btn { list-style: none; display: flex; gap: 10px; align-items: center; }
 

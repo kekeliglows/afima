@@ -22,6 +22,7 @@
   <!-- CSS -->
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/profil.css">
+  <link rel="stylesheet" href="../css/notifications.css">
 
   <!-- Open Graph -->
   <meta property="og:type" content="website">
@@ -49,6 +50,7 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 
   <!-- 3. Utilitaires (dépendances de Cart, Currency, Wishlist) -->
+   <script src="../js/utils/notifications.js"></script>
   <script src="../js/utils/currency.js"></script>
   <script src="../js/utils/wishlist.js"></script>
   <script src="../js/cart.js"></script>
@@ -75,8 +77,7 @@
 
       <!-- Logo -->
       <a href="../index.html" class="logo" aria-label="Retour à l'accueil afima">
-        <img src="../assets/logo.png" alt="Logo afima" width="36" height="36">
-        <span class="logo-text">afima</span>
+        <span class="logo-text">af<span class="logo-i"><span class="logo-i-dot"></span><span class="logo-i-stem"></span></span>ma</span>
       </a>
 
       <!-- Navigation desktop -->
@@ -105,7 +106,21 @@
             <i data-lucide="log-out"></i> Déconnexion
           </button>
         </li>
-
+<li class="notif-wrapper">
+  <button type="button" class="btn btn-outline" id="btnNotifBell" aria-label="Notifications">
+    <i data-lucide="bell"></i>
+    <span class="notif-badge hidden" id="notifBadge">0</span>
+  </button>
+  <div class="notif-dropdown hidden" id="notifDropdown">
+    <div class="notif-dropdown-header">
+      <span>Notifications</span>
+      <button type="button" id="btnMarkAllRead">Tout marquer comme lu</button>
+    </div>
+    <div id="notifList" class="notif-list">
+      <p class="notif-empty">Chargement...</p>
+    </div>
+  </div>
+</li>
       </ul>
 
       <!-- Bouton menu mobile -->

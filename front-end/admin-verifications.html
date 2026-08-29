@@ -1,160 +1,101 @@
-const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+  <title>Vérifications vendeur — Admin afima</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="../assets/logo.png">
+  <meta name="theme-color" content="#111111">
 
-// ── HAMBURGER ──
-const navToggle  = document.getElementById('navToggle');
-const mobileMenu = document.getElementById('mobileMenu');
-navToggle?.addEventListener('click', () => {
-  const open = mobileMenu.classList.toggle('hidden') === false;
-  navToggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-  navToggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-  navToggle.setAttribute('aria-expanded', String(open));
-});
-document.addEventListener('click', e => {
-  if (mobileMenu && !mobileMenu.classList.contains('hidden') &&
-      !navToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
-    mobileMenu.classList.add('hidden');
-    navToggle.querySelector('.icon-menu')?.classList.remove('hidden');
-    navToggle.querySelector('.icon-close')?.classList.add('hidden');
-    navToggle.setAttribute('aria-expanded', 'false');
-  }
-});
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/index.css">
+  <link rel="stylesheet" href="../css/commandes.css">
+  <link rel="stylesheet" href="../css/litiges.css">
+  <link rel="stylesheet" href="../css/verification.css">
+  <link rel="stylesheet" href="../css/notifications.css">
+  <link rel="shortcut icon" href="../assets/logo.png" type="image/x-icon">
 
-async function renderListe() {
-  const verifs = await Verification.getVerificationsEnAttente({ supabaseClient });
-  const list = document.getElementById('admin-verifs-list');
-
-  if (verifs.length === 0) {
-    list.innerHTML = `<div class="commandes-empty"><p>Aucune vérification en attente.</p></div>`;
-    lucide.createIcons();
-    return;
-  }
-
-  list.innerHTML = verifs.map(v => {
-    const date = new Date(v.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-    const nomVendeur = v.profiles?.full_name || 'Vendeur';
-    const typeLabel = Verification.TYPES[v.type_document] || v.type_document;
-
-    return `
-      <div class="commande-card litige-detail-card" data-verif-id="${escapeHtml(v.id)}">
-        <div class="commande-item">
-          <div class="commande-item-info">
-            <p class="commande-item-titre">${escapeHtml(nomVendeur)}</p>
-            <p class="commande-item-detail">${escapeHtml(typeLabel)} · envoyé le ${date}</p>
-          </div>
-          <button type="button" class="btn btn-outline btn-voir-doc" data-path="${escapeHtml(v.document_path)}">
-            <i data-lucide="eye"></i> Voir le document
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/verification.js"></script>
+  <script src="../js/admin-verification.js" defer></script>
+</head>
+<body>
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="../index.html" class="logo">
+        <span class="logo-text">af<span class="logo-i"><span class="logo-i-dot"></span><span class="logo-i-stem"></span></span>ma</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li>
+          <a href="dashboard.html" class="btn btn-outline">
+            <i data-lucide="layout-dashboard"></i> Dashboard
+          </a>
+        </li>
+        <li>
+          <a href="admin-litiges.html" class="btn btn-outline">
+            <i data-lucide="gavel"></i> Litiges à traiter
+          </a>
+        </li>
+        <li>
+          <a href="admin-verifications.html" class="btn btn-outline active-nav">
+            <i data-lucide="shield-check"></i> Vérifications vendeur
+          </a>
+        </li>
+        <li>
+          <button class="btn btn-outline" id="btnLogout">
+            <i data-lucide="log-out"></i> Déconnexion
           </button>
-        </div>
+        </li>
+      </ul>
 
-        <div class="verif-actions">
-          <button type="button" class="btn btn-primary btn-approuver" data-id="${escapeHtml(v.id)}">
-            <i data-lucide="check"></i> Approuver
-          </button>
-          <button type="button" class="btn btn-outline btn-rejeter-toggle" data-id="${escapeHtml(v.id)}">
-            <i data-lucide="x"></i> Rejeter
-          </button>
-        </div>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
 
-        <div class="verif-reject-form hidden" id="rejectForm-${escapeHtml(v.id)}">
-          <textarea placeholder="Motif du rejet (visible par le vendeur)" rows="2"></textarea>
-          <button type="button" class="btn btn-primary btn-confirmer-rejet" data-id="${escapeHtml(v.id)}">Confirmer le rejet</button>
-        </div>
+    <div class="mobile-menu hidden" id="mobileMenu" role="navigation" aria-label="Menu mobile">
+      <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="admin-litiges.html" class="mobile-link"><i data-lucide="gavel"></i> Litiges à traiter</a>
+      <a href="admin-verifications.html" class="mobile-link"><i data-lucide="shield-check"></i> Vérifications vendeur</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile">
+        <i data-lucide="log-out"></i> Déconnexion
+      </button>
+    </div>
+  </header>
 
-        <p class="litige-msg hidden" id="verifMsg-${escapeHtml(v.id)}"></p>
-      </div>`;
-  }).join('');
+  <main class="commandes-main">
+    <h1 class="commandes-title">
+      <i data-lucide="shield-check"></i> Vérifications vendeur à traiter
+    </h1>
 
-  lucide.createIcons();
-  attachHandlers();
-}
+    <div id="admin-verifs-list" class="commandes-list" aria-live="polite">
+      <div class="cmd-skeleton"><div class="skeleton-cmd"></div></div>
+    </div>
+  </main>
 
-function attachHandlers() {
-  document.querySelectorAll('.btn-voir-doc').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const card = btn.closest('[data-verif-id]');
-      const msgEl = card?.querySelector('.litige-msg');
-      try {
-        const url = await Verification.getDocumentUrl({ supabaseClient, filePath: btn.dataset.path });
-        window.open(url, '_blank', 'noopener');
-      } catch (err) {
-        if (msgEl) {
-          msgEl.textContent = 'Impossible d\'ouvrir le document : ' + (err.message || 'erreur inconnue.');
-          msgEl.className = 'litige-msg litige-msg-error';
-          msgEl.classList.remove('hidden');
-        }
-      }
-    });
-  });
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/logo.png" alt="afima">
+        <span>afima</span>
+      </div>
+      <p>&copy; 2026 afima. Tous droits réservés.</p>
+      <div class="footer-links">
+        <a href="a-propos.html">À propos</a>
+        <a href="faq.html">FAQ</a>
+        <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+        <a href="politique-confidentialite.html">Politique de confidentialité</a>
+      </div>
+    </div>
+  </footer>
 
-  document.querySelectorAll('.btn-approuver').forEach(btn => {
-    btn.addEventListener('click', () => decider(btn.dataset.id, true));
-  });
-
-  document.querySelectorAll('.btn-rejeter-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.getElementById(`rejectForm-${btn.dataset.id}`).classList.toggle('hidden');
-    });
-  });
-
-  document.querySelectorAll('.btn-confirmer-rejet').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const form = document.getElementById(`rejectForm-${btn.dataset.id}`);
-      const motif = form.querySelector('textarea').value.trim();
-      if (!motif) {
-        form.querySelector('textarea').focus();
-        return;
-      }
-      decider(btn.dataset.id, false, motif);
-    });
-  });
-}
-
-async function decider(verificationId, approuve, motifRejet) {
-  const msgEl = document.getElementById(`verifMsg-${verificationId}`);
-  try {
-    await Verification.decideVerification({ supabaseClient, verificationId, approuve, motifRejet });
-    await renderListe(); // recharge la liste (la ligne traitée disparaît)
-  } catch (err) {
-    if (msgEl) {
-      msgEl.textContent = 'Erreur : ' + (err.message || 'action impossible.');
-      msgEl.className = 'litige-msg litige-msg-error';
-      msgEl.classList.remove('hidden');
-    }
-  }
-}
-
-async function init() {
-  const { data: { session } } = await supabaseClient.auth.getSession();
-  if (!session) { window.location.href = 'login.html'; return; }
-
-  const admin = await Verification.isAdmin({ supabaseClient, userId: session.user.id });
-  if (!admin) {
-    document.getElementById('admin-verifs-list').innerHTML = `
-      <div class="commandes-empty">
-        <p>Accès réservé à l'équipe afima.</p>
-        <a href="../index.html" class="btn btn-primary">Retour à l'accueil</a>
-      </div>`;
-    lucide.createIcons();
-    return;
-  }
-
-  const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
-  document.getElementById('btnLogout')?.addEventListener('click', logout);
-  document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
-
-  await renderListe();
-}
-
-init();
+  <script>lucide.createIcons();</script>
+</body>
+</html>

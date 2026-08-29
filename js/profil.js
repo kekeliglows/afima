@@ -103,6 +103,15 @@ async function initProfile() {
     initProfileEvents();
     initVendeurModal();
 
+    if (window.Notifications && typeof window.Notifications.initNotifBell === 'function') {
+      window.Notifications.initNotifBell({
+        supabaseClient: profileSupabaseClient,
+        userId: currentUserId,
+      });
+    } else {
+      console.warn('Notifications: module non initialisé ou absent.');
+    }
+
     await loadProfile(session.user);
     await loadProductCount(currentUserId);
 
