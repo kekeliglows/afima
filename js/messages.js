@@ -33,17 +33,15 @@ let presenceChannel = null;
 // =========================
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    initHamburger();
-    initMessages();
+        initMessages();
   });
 } else {
-  initHamburger();
-  initMessages();
+    initMessages();
 }
 
 async function initMessages() {
   try {
-    const { data: { session } } = await sb.auth.getSession();
+    const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) {
       window.location.href = 'login.html';
       return;
@@ -121,7 +119,7 @@ function isMessageHiddenForCurrentUser(msg) {
 //  CHARGEMENT DES CONVERSATIONS
 // =========================
 async function loadConversations() {
-  const { data, error } = await sb
+  const { data, error } = await supabaseClient
     .from('messages')
     .select(`
       *,
@@ -263,7 +261,7 @@ async function openConversationFromUrl() {
   let otherName = 'Vendeur';
   let otherAvatar = null;
   try {
-    const { data: profile } = await sb
+    const { data: profile } = await supabaseClient
       .from('profiles')
       .select('full_name, avatar_url')
       .eq('id', toId)
@@ -348,7 +346,7 @@ async function renderChat() {
       .filter(msg => mediaTypes.includes(msg.type) && msg.content)
       .map(async msg => {
         try {
-          const { data, error } = await sb.storage.from('voice-notes').createSignedUrl(msg.content, 3600);
+          const { data, error } = await supabaseClient.storage.from('voice-notes').createSignedUrl(msg.content, 3600);
           if (!error && data) signedUrls[msg.id] = data.signedUrl;
         } catch (e) {
           console.warn('URL signée indisponible :', e.message);
@@ -529,7 +527,7 @@ async function deleteSelectedMessages(scope) {
     }).filter(Boolean);
 
     await Promise.all(updates.map(({ id, column }) =>
-      sb.from('messages').update({ [column]: true }).eq('id', id)
+      supabaseClient.from('messages').update({ [column]: true }).eq('id', id)
     ));
   } else {
     const mineIds = ids.filter(id => {
@@ -545,7 +543,7 @@ async function deleteSelectedMessages(scope) {
     if (!confirm(`Supprimer ${mineIds.length} message(s) pour tout le monde ?`)) return;
 
     await Promise.all(mineIds.map(id =>
-      sb.from('messages')
+      supabaseClient.from('messages')
         .update({ deleted_for_everyone: true, content: '' })
         .eq('id', id)
         .eq('sender_id', currentUserId)
@@ -588,7 +586,7 @@ function openDeleteMenu(messageId, isMine) {
 
 async function deleteMessageForMe(messageId, isMine) {
   const column = isMine ? 'deleted_for_sender' : 'deleted_for_recipient';
-  const { error } = await sb.from('messages').update({ [column]: true }).eq('id', messageId);
+  const { error } = await supabaseClient.from('messages').update({ [column]: true }).eq('id', messageId);
   if (error) {
     console.error('deleteForMe :', error);
     alert('Erreur lors de la suppression : ' + error.message);
@@ -602,7 +600,7 @@ async function deleteMessageForEveryone(messageId) {
 
   const msg = activeConversation?.messages.find(m => m.id === messageId);
 
-  const { error } = await sb
+  const { error } = await supabaseClient
     .from('messages')
     .update({ deleted_for_everyone: true, content: '' })
     .eq('id', messageId)
@@ -618,7 +616,7 @@ async function deleteMessageForEveryone(messageId) {
   // désormais directement le chemin dans le bucket privé)
   if (msg && (msg.type === 'audio' || msg.type === 'image' || msg.type === 'file') && msg.content) {
     try {
-      await sb.storage.from('voice-notes').remove([msg.content]);
+      await supabaseClient.storage.from('voice-notes').remove([msg.content]);
     } catch (err) {
       console.warn('Nettoyage du Storage ignoré :', err.message);
     }
@@ -651,7 +649,7 @@ async function sendMessage(event) {
     delivered: false,
   };
 
-  const { error } = await sb.from('messages').insert([message]);
+  const { error } = await supabaseClient.from('messages').insert([message]);
   if (error) {
     console.error('sendMessage :', error);
     alert('Impossible d\'envoyer le message.');
@@ -674,7 +672,7 @@ async function sendFileMessage() {
   const filePath = `${currentUserId}/file_${Date.now()}_${safeName}`;
 
   try {
-    const { error: uploadError } = await sb.storage
+    const { error: uploadError } = await supabaseClient.storage
       .from('voice-notes')
       .upload(filePath, file, { contentType: file.type, cacheControl: '3600' });
 
@@ -692,7 +690,7 @@ async function sendFileMessage() {
       delivered: false,
     };
 
-    const { error: insertError } = await sb.from('messages').insert([message]);
+    const { error: insertError } = await supabaseClient.from('messages').insert([message]);
     if (insertError) {
       alert('Erreur envoi : ' + insertError.message);
       return;
@@ -717,7 +715,7 @@ async function sendAudioMessage(filePath) {
     delivered: false,
   };
 
-  const { error } = await sb.from('messages').insert([message]);
+  const { error } = await supabaseClient.from('messages').insert([message]);
   if (error) {
     console.error('sendAudioMessage :', error);
     alert('Erreur envoi vocal.');
@@ -849,7 +847,7 @@ async function startVoiceRecording(e) {
       }
 
       try {
-        const { error: uploadError } = await sb.storage
+        const { error: uploadError } = await supabaseClient.storage
           .from('voice-notes')
           .upload(filePath, blob, {
             contentType: blob.type || mimeType,
@@ -950,7 +948,7 @@ function stopEqualizer() {
 //  ACCUSÉS DE RÉCEPTION & PRÉSENCE
 // =========================
 async function markAllReceivedAsDelivered() {
-  const { error } = await sb
+  const { error } = await supabaseClient
     .from('messages')
     .update({ delivered: true })
     .eq('recipient_id', currentUserId)
@@ -965,7 +963,7 @@ async function markAsRead(otherId) {
     .map(m => m.id);
   if (unreadIds.length === 0) return;
 
-  const { error } = await sb
+  const { error } = await supabaseClient
     .from('messages')
     .update({ read: true, delivered: true })
     .in('id', unreadIds);
@@ -987,11 +985,11 @@ async function markAsRead(otherId) {
 
 function subscribeToPresence(otherId) {
   if (presenceChannel) {
-    sb.removeChannel(presenceChannel);
+    supabaseClient.removeChannel(presenceChannel);
     presenceChannel = null;
   }
 
-  presenceChannel = sb.channel(`presence:${otherId}`, {
+  presenceChannel = supabaseClient.channel(`presence:${otherId}`, {
     config: { presence: { key: currentUserId } }
   });
 
@@ -1033,7 +1031,7 @@ async function updatePresenceStatus(status) {
 //  TEMPS RÉEL (REALTIME)
 // =========================
 function subscribeRealtime() {
-  sb.channel('messages-recues')
+  supabaseClient.channel('messages-recues')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -1042,13 +1040,13 @@ function subscribeRealtime() {
     }, async (payload) => {
       const msg = payload.new;
       if (!msg.delivered) {
-        await sb.from('messages').update({ delivered: true }).eq('id', msg.id);
+        await supabaseClient.from('messages').update({ delivered: true }).eq('id', msg.id);
       }
       await loadConversations();
     })
     .subscribe();
 
-  sb.channel('messages-envoyees')
+  supabaseClient.channel('messages-envoyees')
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -1057,7 +1055,7 @@ function subscribeRealtime() {
     }, () => loadConversations())
     .subscribe();
 
-  sb.channel('messages-updates')
+  supabaseClient.channel('messages-updates')
     .on('postgres_changes', {
       event: 'UPDATE',
       schema: 'public',
@@ -1080,7 +1078,7 @@ function switchChat(otherId) {
     chatActive?.classList.add('hidden');
     chatEmpty?.classList.remove('hidden');
     if (presenceChannel) {
-      sb.removeChannel(presenceChannel);
+      supabaseClient.removeChannel(presenceChannel);
       presenceChannel = null;
     }
     if (window.innerWidth <= 768) {
@@ -1097,35 +1095,12 @@ function switchChat(otherId) {
 
 async function logout() {
   try {
-    await sb.auth.signOut();
+    await supabaseClient.auth.signOut();
     window.location.href = '../index.html';
   } catch (err) {
     console.error('logout :', err);
     alert('Erreur de déconnexion.');
   }
-}
-
-function initHamburger() {
-  const toggle = document.getElementById('navToggle');
-  const menu = document.getElementById('mobileMenu');
-  if (!toggle || !menu) return;
-
-  toggle.addEventListener('click', () => {
-    const isOpen = !menu.classList.contains('hidden');
-    menu.classList.toggle('hidden');
-    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', !isOpen);
-    toggle.querySelector('.icon-close')?.classList.toggle('hidden', isOpen);
-    toggle.setAttribute('aria-expanded', String(!isOpen));
-  });
-
-  document.addEventListener('click', (e) => {
-    if (!menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add('hidden');
-      toggle.querySelector('.icon-menu')?.classList.remove('hidden');
-      toggle.querySelector('.icon-close')?.classList.add('hidden');
-      toggle.setAttribute('aria-expanded', 'false');
-    }
-  });
 }
 
 function handleResize() {

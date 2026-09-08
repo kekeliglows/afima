@@ -17,11 +17,11 @@
   <meta name="twitter:title" content="FAQ — Afima | Questions fréquentes sur la marketplace">
   <meta name="twitter:description" content="Toutes les réponses à vos questions sur Afima : compte, achat, vente, livraison, paiement, litiges.">
   <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
+  <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/info-pages.css">
-  <link rel="icon" href="../assets/logo.png" type="image/png">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -40,30 +40,59 @@
     ]
   }
   </script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/nav.js"></script>
 </head>
 <body>
+
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="../index.html" class="logo" aria-label="Accueil Afima">
+        <span class="logo-text">af<span class="logo-i"><span class="logo-i-dot"></span><span class="logo-i-stem"></span></span>ma</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="login.html" class="btn btn-outline"><i data-lucide="log-in"></i> Connexion</a></li>
+        <li><a href="signup.html" class="btn btn-primary"><i data-lucide="user-plus"></i> S'inscrire</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
+    <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu mobile" aria-modal="true">
+      <a href="a-propos.html" class="mobile-link"><i data-lucide="info"></i> À propos</a>
+      <a href="faq.html" class="mobile-link"><i data-lucide="help-circle"></i> FAQ</a>
+      <div class="mobile-menu-sep"></div>
+      <a href="login.html" class="mobile-link"><i data-lucide="log-in"></i> Connexion</a>
+      <a href="signup.html" class="mobile-link mobile-link-primary"><i data-lucide="user-plus"></i> Créer un compte</a>
+    </div>
+  </header>
+
   <main class="info-page">
     <span class="eyebrow">FAQ</span>
-    <h1>FAQ afima</h1>
-    <p class="lead">Questions fréquentes sur l’utilisation de la plateforme.</p>
+    <h1>FAQ Afima</h1>
+    <p class="lead">Questions fréquentes sur l'utilisation de la plateforme.</p>
 
     <section>
       <h2>Comment créer un compte ?</h2>
-      <p>Il suffit de cliquer sur “Créer un compte”, de remplir vos informations de base et de confirmer votre adresse e-mail.</p>
+      <p>Il suffit de cliquer sur "Créer un compte", de remplir vos informations de base et de confirmer votre adresse e-mail.</p>
     </section>
 
     <section>
       <h2>Comment devenir vendeur ?</h2>
-      <p>Rendez-vous sur votre profil et cliquez sur “Devenir vendeur”. Renseignez votre nom complet et votre numéro de téléphone (obligatoires), et votre ville si vous le souhaitez. Vous pouvez ensuite ajouter vos premiers produits depuis votre tableau de bord.</p>
+      <p>Rendez-vous sur votre profil et cliquez sur "Devenir vendeur". Renseignez votre nom complet et votre numéro de téléphone (obligatoires), et votre ville si vous le souhaitez. Vous pouvez ensuite ajouter vos premiers produits depuis votre tableau de bord.</p>
     </section>
 
     <section>
       <h2>Comment acheter un produit ?</h2>
-      <p>Parcourez le catalogue, consultez la fiche produit, puis ajoutez-le au panier — ou utilisez “Acheter maintenant” pour aller directement au paiement. Une adresse de livraison valide est nécessaire pour valider la commande.</p>
+      <p>Parcourez le catalogue, consultez la fiche produit, puis ajoutez-le au panier — ou utilisez "Acheter maintenant" pour aller directement au paiement. Une adresse de livraison valide est nécessaire pour valider la commande.</p>
     </section>
 
     <section>
-      <h2>Mon panier est-il conservé si je change d’appareil ?</h2>
+      <h2>Mon panier est-il conservé si je change d'appareil ?</h2>
       <p>Oui. Le panier est enregistré sur votre compte, pas seulement sur votre navigateur : vous le retrouvez automatiquement en vous connectant depuis un autre téléphone ou ordinateur.</p>
     </section>
 
@@ -84,7 +113,7 @@
 
     <section>
       <h2>Comment suivre ma commande ?</h2>
-      <p>La page “Mes commandes” affiche le statut de chaque commande : en attente de paiement, confirmée, en cours, livrée ou annulée.</p>
+      <p>La page "Mes commandes" affiche le statut de chaque commande : en attente de paiement, confirmée, en cours, livrée ou annulée.</p>
     </section>
 
     <section>
@@ -94,10 +123,12 @@
 
     <section>
       <h2>Que faire si un problème survient ?</h2>
-      <p>Contactez d’abord le vendeur directement via la messagerie intégrée à afima. Si le problème persiste ou n’est pas résolu, contactez notre support.</p>
+      <p>Contactez d'abord le vendeur directement via la messagerie intégrée à Afima. Si le problème persiste ou n'est pas résolu, contactez notre support.</p>
     </section>
 
     <a class="back-link" href="../index.html">← Retour à l'accueil</a>
   </main>
+
+  <script>lucide.createIcons();</script>
 </body>
 </html>

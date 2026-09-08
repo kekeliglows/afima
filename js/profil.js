@@ -71,8 +71,7 @@ let originalProfileValues = {
 // ============================================================
 
 document.addEventListener("DOMContentLoaded", () => {
-  initHamburger();
-  initProfile();
+    initProfile();
 });
 
 // ============================================================
@@ -707,29 +706,6 @@ async function submitVendeurForm(event) {
 // ============================================================
 // HAMBURGER
 // ============================================================
-
-function initHamburger() {
-  const toggle = document.getElementById("navToggle");
-  const menu = document.getElementById("mobileMenu");
-  if (!toggle || !menu) return;
-
-  toggle.addEventListener("click", () => {
-    const opened = menu.classList.toggle("hidden") === false;
-    toggle.querySelector(".icon-menu")?.classList.toggle("hidden", opened);
-    toggle.querySelector(".icon-close")?.classList.toggle("hidden", !opened);
-    toggle.setAttribute("aria-expanded", String(opened));
-    refreshLucideIcons();
-  });
-
-  document.addEventListener("click", (event) => {
-    if (menu.classList.contains("hidden")) return;
-    if (toggle.contains(event.target) || menu.contains(event.target)) return;
-    menu.classList.add("hidden");
-    toggle.querySelector(".icon-menu")?.classList.remove("hidden");
-    toggle.querySelector(".icon-close")?.classList.add("hidden");
-    toggle.setAttribute("aria-expanded", "false");
-  });
-}
 
 // ============================================================
 // DÉCONNEXION

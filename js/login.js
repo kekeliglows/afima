@@ -1,11 +1,40 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const SUPABASE_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
+  // ── Utilisation du client global exposé par supabase.js ──
+  // login.html charge supabase.js AVANT login.js
+  const client = window.supabaseClient || supabase.createClient(
+    'https://ehkytlouakkfmtfatbmi.supabase.co',
+    'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa'
+  );
+
   const PRODUCTION_URL = 'https://afima-ruby.vercel.app';
   const EMAIL_CONFIRMATION_URL = `${PRODUCTION_URL}/front-end/signup.html?confirmed=1`;
   const RESEND_COOLDOWN_MS = 30 * 1000;
-  const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+  // ── GUARD : si l'utilisateur est déjà connecté, on le redirige ──
+  // On lit la session AVANT d'afficher quoi que ce soit.
+  // Le paramètre ?redirect= permet de renvoyer vers la page d'origine
+  // (ex : login.html?redirect=panier.html).
+  (async () => {
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (session) {
+        const params  = new URLSearchParams(window.location.search);
+        const target  = params.get('redirect');
+        // Sécurité : on n'accepte que des chemins relatifs simples (pas de http)
+        const safeTarget = target && !target.startsWith('http') && !target.startsWith('//')
+          ? target
+          : 'catalogue.html';
+        window.location.replace(safeTarget);
+        return; // arrêt — inutile de continuer l'initialisation
+      }
+    } catch {
+      // Pas de réseau ou session invalide → on laisse afficher la page normalement
+    }
+    initLoginPage(client, EMAIL_CONFIRMATION_URL, RESEND_COOLDOWN_MS);
+  })();
+});
+
+function initLoginPage(client, EMAIL_CONFIRMATION_URL, RESEND_COOLDOWN_MS) {
   function escapeHtml(str) {
     if (str === null || str === undefined) return '';
     return String(str)
@@ -428,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+} // fin initLoginPage
 
 // Applique un profil "vendeur" en attente, sauvegardé localement lors
 // d'une inscription dont l'écriture avait été bloquée par la RLS

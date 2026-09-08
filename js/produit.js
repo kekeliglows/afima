@@ -14,19 +14,6 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// ── HAMBURGER ── (INTACT, NON MODIFIÉ)
-const navToggle  = document.getElementById('navToggle');
-const mobileMenu = document.getElementById('mobileMenu');
-navToggle?.addEventListener('click', () => {
-  const open = mobileMenu.classList.toggle('hidden') === false;
-  navToggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-  navToggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-  navToggle.setAttribute('aria-expanded', String(open));
-});
-document.addEventListener('click', e => {
-  if (mobileMenu && !mobileMenu.classList.contains('hidden') &&
-      !navToggle.contains(e.target) && !mobileMenu.contains(e.target)) {
-    mobileMenu.classList.add('hidden');
     navToggle.querySelector('.icon-menu')?.classList.remove('hidden');
     navToggle.querySelector('.icon-close')?.classList.add('hidden');
     navToggle.setAttribute('aria-expanded', 'false');

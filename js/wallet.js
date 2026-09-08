@@ -53,25 +53,6 @@ function hideMsg(el = 'walletMsg') {
 }
 
 // ── HAMBURGER ──
-function initHamburger() {
-  const toggle = document.getElementById('navToggle');
-  const menu   = document.getElementById('mobileMenu');
-  if (!toggle || !menu) return;
-  toggle.addEventListener('click', () => {
-    const open = menu.classList.toggle('hidden') === false;
-    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-    toggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('click', e => {
-    if (!menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add('hidden');
-      toggle.querySelector('.icon-menu')?.classList.remove('hidden');
-      toggle.querySelector('.icon-close')?.classList.add('hidden');
-    }
-  });
-}
-
 // ── CHARGER LE WALLET ──
 async function loadWallet() {
   const { data, error } = await supabaseClient
@@ -253,8 +234,7 @@ function initWithdrawModal() {
 
 // ── INIT ──
 async function init() {
-  initHamburger();
-
+  
   const { data: { session } } = await supabaseClient.auth.getSession();
   if (!session) { window.location.href = 'login.html'; return; }
   currentUserId = session.user.id;

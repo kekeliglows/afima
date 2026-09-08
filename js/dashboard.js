@@ -1,6 +1,5 @@
-const SB_URL = 'https://ehkytlouakkfmtfatbmi.supabase.co';
-const SB_KEY = 'sb_publishable_A-f-SEGhhW25sAulnHLIbA_OvyjQ9Qa';
-const sb = supabase.createClient(SB_URL, SB_KEY);
+// supabaseClient est exposé par js/supabase.js (window.supabaseClient)
+const sb = window.supabaseClient;
 
 let allProduits = [];
 let deleteTargetId = null;
@@ -25,7 +24,6 @@ function formatPriceValue(value) {
 }
 
 // ── HAMBURGER ──
-initHamburger();
 
 async function init() {
   const { data: { session } } = await sb.auth.getSession();
@@ -308,23 +306,5 @@ function showMsg(text, type) {
 }
 
 async function logout() { await sb.auth.signOut(); window.location.href = '../index.html'; }
-
-function initHamburger() {
-  const toggle = document.getElementById('navToggle');
-  const menu   = document.getElementById('mobileMenu');
-  toggle?.addEventListener('click', () => {
-    const open = menu.classList.toggle('hidden') === false;
-    toggle.querySelector('.icon-menu')?.classList.toggle('hidden', open);
-    toggle.querySelector('.icon-close')?.classList.toggle('hidden', !open);
-    toggle.setAttribute('aria-expanded', String(open));
-  });
-  document.addEventListener('click', e => {
-    if (menu && !menu.classList.contains('hidden') && !toggle.contains(e.target) && !menu.contains(e.target)) {
-      menu.classList.add('hidden');
-      toggle.querySelector('.icon-menu')?.classList.remove('hidden');
-      toggle.querySelector('.icon-close')?.classList.add('hidden');
-    }
-  });
-}
 
 init();

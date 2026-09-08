@@ -16,9 +16,40 @@
   <meta name="twitter:title" content="Conditions générales d'utilisation — Afima">
   <meta name="twitter:description" content="Consultez les conditions générales d'utilisation d'Afima.">
   <link rel="icon" href="../assets/logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/style.css">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/nav.js"></script>
 </head>
 <body>
+
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="../index.html" class="logo" aria-label="Accueil Afima">
+        <span class="logo-text">af<span class="logo-i"><span class="logo-i-dot"></span><span class="logo-i-stem"></span></span>ma</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="a-propos.html">À propos</a></li>
+        <li><a href="faq.html">FAQ</a></li>
+        <li><a href="login.html" class="btn btn-outline"><i data-lucide="log-in"></i> Connexion</a></li>
+        <li><a href="signup.html" class="btn btn-primary"><i data-lucide="user-plus"></i> S'inscrire</a></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
+    <div class="mobile-menu" id="mobileMenu" role="dialog" aria-label="Menu mobile" aria-modal="true">
+      <a href="a-propos.html" class="mobile-link"><i data-lucide="info"></i> À propos</a>
+      <a href="faq.html" class="mobile-link"><i data-lucide="help-circle"></i> FAQ</a>
+      <div class="mobile-menu-sep"></div>
+      <a href="login.html" class="mobile-link"><i data-lucide="log-in"></i> Connexion</a>
+      <a href="signup.html" class="mobile-link mobile-link-primary"><i data-lucide="user-plus"></i> Créer un compte</a>
+    </div>
+  </header>
 
   <main class="legal-container">
     <h1>Conditions Générales d'Utilisation (CGU)</h1>
@@ -91,6 +122,6 @@
 
     <p class="legal-back"><a href="../index.html">&larr; Retour à l'accueil</a></p>
   </main>
-
+  <script>lucide.createIcons();</script>
 </body>
 </html>
