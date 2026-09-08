@@ -14,12 +14,6 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-    navToggle.querySelector('.icon-menu')?.classList.remove('hidden');
-    navToggle.querySelector('.icon-close')?.classList.add('hidden');
-    navToggle.setAttribute('aria-expanded', 'false');
-  }
-});
-
 // ── PANIER (stocké côté serveur dans panier_items, voir js/utils/cart.js) ──
 let currentUserId = null;
 

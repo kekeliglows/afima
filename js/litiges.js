@@ -583,5 +583,6 @@ async function renderListe() {
       </div>`;
   }).join('');
   lucide.createIcons();
+}
 
 init();
