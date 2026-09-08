@@ -2,9 +2,12 @@
 // Même convention que Cart/Litiges/Verification : { supabaseClient, ... } explicite.
 
 const NOTIF_ICONS = {
-  systeme: 'megaphone',
-  commande: 'package',
-  message: 'message-circle'
+  systeme:      'megaphone',
+  commande:     'package',
+  message:      'message-circle',
+  litige:       'shield-alert',
+  paiement:     'banknote',
+  verification: 'shield-check'
 };
 
 async function getNotifications({ supabaseClient, userId, limit = 20 }) {

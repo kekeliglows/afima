@@ -85,6 +85,16 @@ if (form) {
   const placeholder = document.getElementById('previewPlaceholder');
   const previewWrapper = document.getElementById('previewWrapper');
 
+  // ── Affichage conditionnel frais montant ──
+  document.getElementById('fraisType')?.addEventListener('change', (e) => {
+    document.getElementById('fraisMontantGroup').style.display = e.target.value !== 'gratuit' ? '' : 'none';
+  });
+
+  // ── Affichage conditionnel délai custom ──
+  document.getElementById('delaiLivraison')?.addEventListener('change', (e) => {
+    document.getElementById('delaiCustomGroup').style.display = e.target.value === 'custom' ? '' : 'none';
+  });
+
   // Cliquer sur la zone d'aperçu ouvre le sélecteur de fichiers
   previewWrapper?.addEventListener('click', () => {
     photoFile?.click();
@@ -213,12 +223,24 @@ if (form) {
       const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
 
       const { error: dbError } = await supabaseClient.from('produits').insert([{
-        user_id: currentSession.user.id,
+        user_id:              currentSession.user.id,
         titre,
         description,
         prix,
         stock,
-        image_url: finalImageUrl
+        image_url:            finalImageUrl,
+        etat:                 document.getElementById('etat')?.value || 'neuf',
+        categorie:            document.getElementById('categorie')?.value || null,
+        mode_livraison:       document.getElementById('modeLivraison')?.value || 'vendeur',
+        zone_livraison:       document.getElementById('zoneLivraison')?.value || 'ville',
+        frais_livraison_type: document.getElementById('fraisType')?.value || 'gratuit',
+        frais_livraison:      parseFloat(document.getElementById('fraisMontant')?.value || '0') || 0,
+        delai_livraison:      document.getElementById('delaiLivraison')?.value || '3-5j',
+        delai_custom:         document.getElementById('delaiLivraison')?.value === 'custom'
+                                ? document.getElementById('delaiCustom')?.value.trim()
+                                : null,
+        politique_retour:     document.getElementById('politiqueRetour')?.value.trim() || null,
+        devise:               'XOF',
       }]);
 
       if (dbError) throw dbError;

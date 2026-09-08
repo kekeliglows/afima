@@ -33,19 +33,30 @@ document.addEventListener('click', e => {
 
 function fmt(n) { return Currency.formatPrice(n); }
 
+// ── Mapping complet des statuts (aligné sur la DB et le CDC) ──
 const STATUTS = {
-  en_attente_paiement: { label: 'En attente de paiement', icon: 'clock',        css: 'statut-attente'   },
-  confirmee:            { label: 'Confirmée',              icon: 'check-circle', css: 'statut-confirmee' },
-  en_cours:             { label: 'En cours',                icon: 'truck',        css: 'statut-en-cours'  },
-  livree:                { label: 'Livrée',                  icon: 'package-check',css: 'statut-livree'    },
-  annulee:               { label: 'Annulée',                 icon: 'x-circle',     css: 'statut-annulee'   },
+  // Statuts actuels (court terme)
+  en_attente_paiement:  { label: 'En attente de paiement', icon: 'clock',          css: 'statut-attente'      },
+  confirmee:             { label: 'Confirmée',              icon: 'check-circle',   css: 'statut-confirmee'    },
+  // Statuts de livraison (CDC Phase 1)
+  en_preparation:        { label: 'En préparation',         icon: 'package',        css: 'statut-preparation'  },
+  expediee:              { label: 'Expédiée',               icon: 'send',           css: 'statut-expediee'     },
+  en_transit:            { label: 'En transit',             icon: 'truck',          css: 'statut-en-cours'     },
+  livree:                { label: 'Livrée',                 icon: 'package-check',  css: 'statut-livree'       },
+  confirmee_acheteur:    { label: 'Réception confirmée',    icon: 'badge-check',    css: 'statut-confirmee'    },
+  completed:             { label: 'Terminée',               icon: 'circle-check',   css: 'statut-confirmee'    },
+  annulee:               { label: 'Annulée',                icon: 'x-circle',       css: 'statut-annulee'      },
+  // Alias legacy (au cas où la DB utilise encore ces valeurs)
+  en_cours:              { label: 'En cours',               icon: 'truck',          css: 'statut-en-cours'     },
 };
 const STATUT_INCONNU = { label: 'Statut inconnu', icon: 'help-circle', css: 'statut-inconnu' };
 
 // Commandes pour lesquelles il est pertinent de proposer un avis
-const STATUTS_AVIS_AUTORISE = new Set(['confirmee', 'en_cours', 'livree']);
-// Commandes pour lesquelles on peut signaler un problème au centre de résolution
-const STATUTS_LITIGE_AUTORISE = new Set(['en_cours', 'livree']);
+const STATUTS_AVIS_AUTORISE = new Set(['confirmee','en_preparation','expediee','en_transit','livree','confirmee_acheteur','completed','en_cours']);
+// Commandes pour lesquelles on peut signaler un problème
+const STATUTS_LITIGE_AUTORISE = new Set(['en_transit','livree','confirmee_acheteur','en_cours']);
+// Commandes pour lesquelles l'acheteur peut confirmer la réception
+const STATUTS_CONFIRMATION_AUTORISE = new Set(['livree']);
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -54,6 +65,10 @@ async function init() {
   const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
   document.getElementById('btnLogoutMobile')?.addEventListener('click', logout);
+
+  if (window.Notifications?.initNotifBell) {
+    window.Notifications.initNotifBell({ supabaseClient, userId: session.user.id });
+  }
 
   const total = await Cart.getCartCount({ supabaseClient, userId: session.user.id });
   const badge = document.getElementById('cartBadge');
@@ -64,6 +79,7 @@ async function init() {
 
 async function loadCommandes(userId) {
   const list = document.getElementById('commandes-list');
+  const { data: { session } } = await supabaseClient.auth.getSession();
 
   const { data, error } = await supabaseClient
     .from('commandes')
@@ -95,8 +111,9 @@ async function loadCommandes(userId) {
     const statut = STATUTS[cmd.statut] || STATUT_INCONNU;
     const date   = new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
     const items  = cmd.commande_items || [];
-    const avisAutorise = STATUTS_AVIS_AUTORISE.has(cmd.statut);
-    const litigeAutorise = STATUTS_LITIGE_AUTORISE.has(cmd.statut);
+    const avisAutorise    = STATUTS_AVIS_AUTORISE.has(cmd.statut);
+    const litigeAutorise  = STATUTS_LITIGE_AUTORISE.has(cmd.statut);
+    const peutConfirmer   = STATUTS_CONFIRMATION_AUTORISE.has(cmd.statut);
 
     const itemsHtml = items.map(item => {
       const titreSafe = escapeHtml(item.titre);
@@ -115,6 +132,12 @@ async function loadCommandes(userId) {
       </div>`;
     }).join('');
 
+    const adresseHtml = cmd.adresse_livraison ? `
+      <div class="commande-adresse">
+        <i data-lucide="map-pin"></i>
+        <span>${escapeHtml([cmd.adresse_livraison.nom_destinataire, cmd.adresse_livraison.rue, cmd.adresse_livraison.quartier, cmd.adresse_livraison.ville, cmd.adresse_livraison.pays].filter(Boolean).join(', '))}</span>
+      </div>` : '';
+
     return `
       <div class="commande-card">
         <div class="commande-header">
@@ -127,14 +150,35 @@ async function loadCommandes(userId) {
           </span>
         </div>
         <div class="commande-items">${itemsHtml}</div>
+        ${adresseHtml}
         <div class="commande-footer">
           <span class="commande-total-label">Total commande</span>
           <span class="commande-total-val">${fmt(cmd.total)}</span>
+          ${peutConfirmer ? `<button class="btn-confirmer-livraison" type="button" data-id="${escapeHtml(cmd.id)}"><i data-lucide="package-check"></i> Confirmer la réception</button>` : ''}
         </div>
       </div>`;
   }).join('');
 
   lucide.createIcons();
+
+  // ── Confirmation de réception ──
+  list.querySelectorAll('.btn-confirmer-livraison').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const commandeId = btn.dataset.id;
+      if (!confirm('Confirmez-vous la bonne réception de cette commande ? Les fonds seront libérés au vendeur.')) return;
+      btn.disabled = true;
+      btn.textContent = 'Confirmation…';
+      const { error } = await supabaseClient.rpc('release_escrow', { p_commande_id: commandeId });
+      if (error) {
+        alert('Erreur : ' + error.message);
+        btn.disabled = false;
+        btn.innerHTML = '<i data-lucide="package-check"></i> Confirmer la réception';
+        lucide.createIcons();
+      } else {
+        await loadCommandes(session.user.id);
+      }
+    });
+  });
 }
 
 init();

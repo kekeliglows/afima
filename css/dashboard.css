@@ -304,3 +304,63 @@
   .dash-table td::before { content: attr(data-label); font-weight: 700; font-size: 0.75rem; color: #6b7280; display: block; margin-bottom: 2px; }
   .dash-table tr { display: block; border: 1px solid #e5e7eb; border-radius: 12px; margin: 12px; }
 }
+
+/* ── SECTION COMMANDES REÇUES (vendeur) ── */
+#sectionCommandesVendeur {
+  margin-bottom: 28px;
+}
+
+/* On réutilise les classes .commande-card / .commande-header / .commande-item
+   déjà définies dans commandes.css — on les redéfinit minimalement ici
+   pour ne pas dépendre d'un import supplémentaire. */
+.commande-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  margin-bottom: 12px;
+}
+.commande-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.07); }
+
+.commande-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.commande-id   { font-size: 0.78rem; color: #9ca3af; font-weight: 600; font-family: monospace; }
+.commande-date { display: flex; align-items: center; gap: 5px; font-size: 0.8rem; color: #6b7280; }
+.commande-date svg { width: 13px; height: 13px; }
+.commande-statut {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 700;
+  background: #f3f4f6; color: #374151;
+}
+
+.commande-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 18px; border-bottom: 1px solid #f9fafb;
+}
+.commande-item-img {
+  width: 48px; height: 48px; border-radius: 8px;
+  object-fit: cover; border: 1px solid #e5e7eb; flex-shrink: 0;
+}
+.commande-item-info { flex: 1; min-width: 0; }
+.commande-item-titre { font-size: 0.88rem; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.commande-item-detail { font-size: 0.78rem; color: #6b7280; margin-top: 1px; }
+
+.commande-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  background: #f9fafb;
+  border-top: 1px solid #f3f4f6;
+  gap: 10px;
+  flex-wrap: wrap;
+}

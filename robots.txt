@@ -1,7 +1,15 @@
 User-agent: *
 Allow: /
 
-# Espaces authentifiés et formulaires sans intérêt pour l'indexation.
+# Pages publiques indexées
+Allow: /front-end/catalogue.html
+Allow: /front-end/a-propos.html
+Allow: /front-end/faq.html
+Allow: /front-end/conditions-utilisation.html
+Allow: /front-end/politique-confidentialite.html
+Allow: /front-end/produit.html
+
+# Espaces authentifiés et formulaires — pas d'intérêt pour l'indexation
 Disallow: /front-end/login.html
 Disallow: /front-end/signup.html
 Disallow: /front-end/dashboard.html
@@ -10,6 +18,11 @@ Disallow: /front-end/panier.html
 Disallow: /front-end/commandes.html
 Disallow: /front-end/messages.html
 Disallow: /front-end/ajouter-produit.html
-Disallow: /front-end/produit.html
+Disallow: /front-end/verification.html
+Disallow: /front-end/admin-litiges.html
+Disallow: /front-end/admin-verifications.html
+Disallow: /front-end/litiges.html
+Disallow: /front-end/litige.html
+Disallow: /front-end/wallet.html
 
 Sitemap: https://afima-ruby.vercel.app/sitemap.xml

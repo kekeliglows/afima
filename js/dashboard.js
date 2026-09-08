@@ -45,6 +45,11 @@ async function init() {
 
   await loadStats();
   await loadProduits();
+  await loadCommandesVendeur();
+
+  if (window.Notifications?.initNotifBell) {
+    window.Notifications.initNotifBell({ supabaseClient: sb, userId: currentUserId });
+  }
 
   document.getElementById('dashSearch').addEventListener('input', e => renderTable(e.target.value));
 }
@@ -68,6 +73,97 @@ async function loadStats() {
         console.warn('Erreur chargement statistiques :', err.message);
         showMsg('Impossible de charger les statistiques.', 'error');
     }
+}
+
+async function loadCommandesVendeur() {
+  const container = document.getElementById('commandesVendeurList');
+  if (!container) return;
+
+  // Commandes où le vendeur a au moins un article
+  const { data, error } = await sb
+    .from('commande_items')
+    .select('commande_id, titre, image_url, prix_unitaire, quantite, commandes(id, statut, created_at, adresse_livraison, user_id)')
+    .eq('vendeur_id', currentUserId)
+    .order('commande_id', { ascending: false });
+
+  if (error) {
+    container.innerHTML = `<p style="color:#dc2626;padding:16px">Erreur : ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  // Grouper par commande
+  const commandesMap = new Map();
+  (data || []).forEach(item => {
+    const cmd = item.commandes;
+    if (!cmd) return;
+    if (!commandesMap.has(cmd.id)) commandesMap.set(cmd.id, { ...cmd, items: [] });
+    commandesMap.get(cmd.id).items.push(item);
+  });
+
+  const commandes = Array.from(commandesMap.values());
+
+  if (!commandes.length) {
+    container.innerHTML = `<p style="padding:16px;color:#6b7280">Aucune commande reçue pour l'instant.</p>`;
+    return;
+  }
+
+  const STATUTS_VENDEUR = {
+    confirmee:          { label: 'Confirmée — à préparer',  next: 'en_preparation', nextLabel: 'Marquer En préparation' },
+    en_preparation:     { label: 'En préparation',          next: 'expediee',       nextLabel: 'Marquer Expédiée' },
+    expediee:           { label: 'Expédiée',                next: 'en_transit',     nextLabel: 'Marquer En transit' },
+    en_transit:         { label: 'En transit',              next: null,             nextLabel: null },
+    livree:             { label: 'Livrée',                  next: null,             nextLabel: null },
+    confirmee_acheteur: { label: 'Réception confirmée',     next: null,             nextLabel: null },
+    completed:          { label: 'Terminée',                next: null,             nextLabel: null },
+    annulee:            { label: 'Annulée',                 next: null,             nextLabel: null },
+    en_attente_paiement:{ label: 'En attente de paiement',  next: null,             nextLabel: null },
+  };
+
+  container.innerHTML = commandes.map(cmd => {
+    const s = STATUTS_VENDEUR[cmd.statut] || { label: cmd.statut, next: null };
+    const date = new Date(cmd.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const itemsHtml = cmd.items.map(it => `
+      <div class="commande-item" style="pointer-events:none">
+        <img class="commande-item-img" src="${escapeHtml(it.image_url || 'https://placehold.co/48x48')}" alt="${escapeHtml(it.titre || '')}" loading="lazy">
+        <div class="commande-item-info">
+          <p class="commande-item-titre">${escapeHtml(it.titre || '')}</p>
+          <p class="commande-item-detail">Qté : ${it.quantite} × ${formatPriceValue(it.prix_unitaire)}</p>
+        </div>
+      </div>`).join('');
+    const adresse = cmd.adresse_livraison
+      ? escapeHtml([cmd.adresse_livraison.nom_destinataire, cmd.adresse_livraison.rue, cmd.adresse_livraison.ville].filter(Boolean).join(', '))
+      : '—';
+
+    return `
+      <div class="commande-card" id="cmd-${escapeHtml(cmd.id)}">
+        <div class="commande-header">
+          <span class="commande-id">#${escapeHtml(cmd.id.slice(0, 8).toUpperCase())}</span>
+          <span class="commande-date"><i data-lucide="calendar"></i> ${date}</span>
+          <span class="commande-statut">${escapeHtml(s.label)}</span>
+        </div>
+        ${itemsHtml}
+        <div class="commande-footer" style="gap:.5rem;flex-wrap:wrap">
+          <span style="color:#6b7280;font-size:.85rem"><i data-lucide="map-pin" style="width:14px;height:14px"></i> ${adresse}</span>
+          ${s.next ? `<button class="btn btn-primary" style="font-size:.85rem;padding:.4rem .9rem" data-cmd="${escapeHtml(cmd.id)}" data-next="${s.next}" onclick="avancerStatut(this)">
+            <i data-lucide="arrow-right"></i> ${s.nextLabel}
+          </button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  lucide.createIcons();
+}
+
+async function avancerStatut(btn) {
+  const commandeId = btn.dataset.cmd;
+  const nextStatut = btn.dataset.next;
+  btn.disabled = true;
+  const { error } = await sb.from('commandes').update({ statut: nextStatut }).eq('id', commandeId);
+  if (error) {
+    showMsg('Erreur : ' + error.message, 'error');
+    btn.disabled = false;
+    return;
+  }
+  await loadCommandesVendeur();
 }
 
 async function loadProduits() {

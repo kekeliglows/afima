@@ -3,55 +3,91 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>À propos d'afima</title>
-  <meta name="description" content="Découvrez comment afima fonctionne, ce que nous proposons aux acheteurs et aux vendeurs, et comment nous assurons des transactions sécurisées.">
+  <title>À propos d'Afima — Marketplace africaine pour acheter et vendre en ligne</title>
+  <meta name="description" content="Afima est une marketplace africaine qui connecte acheteurs et vendeurs. Paiement sécurisé par escrow, livraison flexible, multidevises (FCFA, Euro, Naira…). Rejoignez-nous gratuitement.">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://afima-ruby.vercel.app/front-end/a-propos.html">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://afima-ruby.vercel.app/front-end/a-propos.html">
-  <meta property="og:title" content="À propos d'Afima">
-  <meta property="og:description" content="Découvrez le fonctionnement de la marketplace Afima.">
+  <meta property="og:title" content="À propos d'Afima — Marketplace africaine">
+  <meta property="og:description" content="Afima connecte acheteurs et vendeurs en Afrique. Paiement escrow sécurisé, multidevises, livraison configurable. Inscription gratuite.">
   <meta property="og:image" content="https://afima-ruby.vercel.app/assets/logo.png">
+  <meta property="og:locale" content="fr_FR">
   <meta property="og:site_name" content="Afima">
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="À propos d'Afima">
-  <meta name="twitter:description" content="Découvrez le fonctionnement de la marketplace Afima.">
+  <meta name="twitter:title" content="À propos d'Afima — Marketplace africaine">
+  <meta name="twitter:description" content="Afima connecte acheteurs et vendeurs en Afrique. Paiement sécurisé, multidevises. Inscription gratuite.">
   <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
   <link rel="icon" href="../assets/logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="../assets/logo.png">
+  <meta name="theme-color" content="#111111">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/index.css">
   <link rel="stylesheet" href="../css/info-pages.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "AboutPage",
+    "name": "À propos d'Afima",
+    "url": "https://afima-ruby.vercel.app/front-end/a-propos.html",
+    "description": "Afima est une marketplace africaine qui connecte acheteurs et vendeurs avec paiement sécurisé par escrow.",
+    "inLanguage": "fr-FR",
+    "isPartOf": { "@type": "WebSite", "name": "Afima", "url": "https://afima-ruby.vercel.app/" },
+    "about": {
+      "@type": "Organization",
+      "name": "Afima",
+      "url": "https://afima-ruby.vercel.app/",
+      "logo": "https://afima-ruby.vercel.app/assets/logo.png",
+      "description": "Marketplace africaine pour acheter et vendre en ligne en toute sécurité"
+    },
+    "breadcrumb": {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type":"ListItem","position":1,"name":"Accueil","item":"https://afima-ruby.vercel.app/"},
+        {"@type":"ListItem","position":2,"name":"À propos","item":"https://afima-ruby.vercel.app/front-end/a-propos.html"}
+      ]
+    }
+  }
+  </script>
 </head>
 <body>
   <main class="info-page">
     <span class="eyebrow">À propos</span>
-    <h1>À propos d'afima</h1>
-    <p class="lead">Une marketplace simple, rapide et rassurante pour l’Afrique.</p>
+    <h1>À propos d'Afima</h1>
+    <p class="lead">Une marketplace africaine simple, rapide et sécurisée pour acheter et vendre en ligne.</p>
 
     <section>
       <h2>Ce que nous faisons</h2>
-      <p>afima connecte des acheteurs et des vendeurs autour de produits variés, du quotidien aux articles plus spécifiques. Notre objectif est de rendre l’achat et la vente accessibles, transparents et sécurisés.</p>
+      <p>Afima connecte des acheteurs et des vendeurs en Afrique autour de produits variés, du quotidien aux articles plus spécifiques. Notre objectif est de rendre l'achat et la vente accessibles, transparents et sécurisés — que vous soyez en Côte d'Ivoire, au Sénégal, au Cameroun, au Bénin ou ailleurs sur le continent.</p>
     </section>
 
     <section>
       <h2>Comment ça marche</h2>
-      <p>Pour acheter, vous parcourez le catalogue, choisissez un produit, puis finalisez votre commande via notre processus sécurisé. Pour vendre, vous créez un compte, publiez votre annonce et gérez votre activité facilement depuis votre espace.</p>
+      <p>Pour acheter, parcourez le <a href="catalogue.html">catalogue</a>, choisissez un produit, puis finalisez votre commande via notre processus sécurisé. Pour vendre, <a href="signup.html">créez un compte gratuitement</a>, publiez votre annonce et gérez votre activité depuis votre tableau de bord.</p>
     </section>
 
     <section>
-      <h2>Livraisons et paiement</h2>
-      <p>Chaque transaction est accompagnée d’un suivi clair pour vous aider à mieux comprendre l’état de votre commande. Les paiements sont traités avec des mesures de sécurité renforcées et les vendeurs doivent respecter des standards de qualité et de service.</p>
+      <h2>Paiement sécurisé et livraison</h2>
+      <p>Les paiements sont traités via <strong>Kkiapay</strong> avec un système d'<strong>escrow</strong> (séquestre) : les fonds sont retenus jusqu'à confirmation de la livraison, ce qui protège à la fois l'acheteur et le vendeur. Les prix sont affichables en <strong>FCFA, Euro, Naira, Dirham, Cedi</strong> et d'autres devises africaines. Chaque vendeur configure ses modes de livraison (à domicile, point relais, retrait sur place) et les zones desservies.</p>
     </section>
 
     <section>
-      <h2>Pourquoi nous faire confiance</h2>
+      <h2>Pourquoi choisir Afima</h2>
       <ul>
-        <li>Un espace pensé pour les vendeurs et les acheteurs.</li>
-        <li>Des échanges plus simples et plus rapides.</li>
-        <li>Un support disponible pour répondre à vos questions.</li>
+        <li>Plateforme pensée pour les vendeurs et les acheteurs africains.</li>
+        <li>Paiement sécurisé par escrow — votre argent est protégé jusqu'à la livraison.</li>
+        <li>Avis vérifiés : seuls les acheteurs confirmés peuvent laisser un avis.</li>
+        <li>Résolution des litiges gérée directement par Afima.</li>
+        <li>Interface disponible sur mobile comme sur ordinateur.</li>
+        <li>Inscription et publication d'annonces entièrement gratuites.</li>
       </ul>
     </section>
+
+    <div class="info-cta" style="margin-top:2rem;display:flex;gap:1rem;flex-wrap:wrap;">
+      <a href="catalogue.html" class="btn btn-primary" style="display:inline-flex;align-items:center;gap:.5rem;">Voir le catalogue</a>
+      <a href="signup.html" class="btn btn-outline" style="display:inline-flex;align-items:center;gap:.5rem;">Créer un compte gratuit</a>
+    </div>
 
     <a class="back-link" href="../index.html">← Retour à l'accueil</a>
   </main>

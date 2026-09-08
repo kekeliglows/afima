@@ -553,17 +553,62 @@ async function init() {
     renderFormulaire(commandeItemId);
 
   } else {
-    const content =
-      document.getElementById('litige-content');
-
-    if (content) {
-      content.innerHTML = `
-        <div class="commandes-empty">
-          <p>Aucun litige ou commande spécifié.</p>
-        </div>
-      `;
-    }
+    // ── Vue liste : tous mes litiges ──
+    await renderListe();
   }
 }
+
+async function renderListe() {
+  const content = document.getElementById('litige-content');
+  if (!content) return;
+
+  content.innerHTML = `
+    <h1 class="commandes-title"><i data-lucide="shield-alert"></i> Mes litiges</h1>
+    <div id="litiges-list"><p class="litige-preuves-vide">Chargement…</p></div>
+  `;
+  lucide.createIcons();
+
+  let litiges = [];
+  try {
+    litiges = await Litiges.getMesLitiges({ supabaseClient, userId: currentUserId });
+  } catch (err) {
+    document.getElementById('litiges-list').innerHTML =
+      `<p class="litige-preuves-vide">Erreur : ${escapeHtml(err.message)}</p>`;
+    return;
+  }
+
+  if (!litiges.length) {
+    document.getElementById('litiges-list').innerHTML = `
+      <div class="commandes-empty">
+        <p>Vous n'avez aucun litige en cours.</p>
+        <a href="commandes.html" class="btn btn-primary">Voir mes commandes</a>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+
+  document.getElementById('litiges-list').innerHTML = litiges.map(l => {
+    const statut = Litiges.STATUTS[l.statut] || { label: l.statut, css: 'litige-inconnu' };
+    const date   = new Date(l.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+    const produit = l.commande_items || {};
+    return `
+      <div class="commande-card" style="cursor:pointer" onclick="window.location.href='litiges.html?id=${encodeURIComponent(l.id)}'">
+        <div class="commande-header">
+          <span class="commande-id">#${escapeHtml(l.id.slice(0, 8).toUpperCase())}</span>
+          <span class="commande-date"><i data-lucide="calendar"></i> ${date}</span>
+          <span class="litige-statut ${statut.css}">${escapeHtml(statut.label)}</span>
+        </div>
+        <div class="commande-item" style="pointer-events:none">
+          <img class="commande-item-img"
+               src="${escapeHtml(produit.image_url || 'https://placehold.co/56x56/f3f4f6/9ca3af?text=?')}"
+               alt="${escapeHtml(produit.titre || '')}" loading="lazy">
+          <div class="commande-item-info">
+            <p class="commande-item-titre">${escapeHtml(produit.titre || 'Produit inconnu')}</p>
+            <p class="commande-item-detail">${escapeHtml(l.motif)}</p>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  lucide.createIcons();
 
 init();

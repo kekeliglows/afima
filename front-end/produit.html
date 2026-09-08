@@ -5,14 +5,28 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Produit — afima</title>
-  <meta name="description"
-    content="Détail du produit sur afima. Consultez la description, le prix et achetez en toute sécurité.">
-  <meta name="robots" content="noindex, nofollow">
+  <title>Produit — Afima</title>
+  <meta name="description" content="Consultez ce produit sur Afima. Description détaillée, prix, avis acheteurs vérifiés. Achetez en toute sécurité grâce au paiement par escrow.">
+  <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://afima-ruby.vercel.app/front-end/produit.html">
+
+  <!-- Open Graph (mis à jour dynamiquement par produit.js) -->
   <meta property="og:type" content="product">
-  <meta property="og:site_name" content="afima">
+  <meta property="og:site_name" content="Afima">
   <meta property="og:locale" content="fr_FR">
+  <meta property="og:title" content="Produit — Afima">
+  <meta property="og:description" content="Consultez ce produit sur Afima et achetez en toute sécurité.">
+  <meta property="og:image" content="https://afima-ruby.vercel.app/assets/logo.png">
+  <meta property="og:url" content="https://afima-ruby.vercel.app/front-end/produit.html">
+
+  <!-- Twitter Card (mis à jour dynamiquement par produit.js) -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Produit — Afima">
+  <meta name="twitter:description" content="Consultez ce produit sur Afima et achetez en toute sécurité.">
+  <meta name="twitter:image" content="https://afima-ruby.vercel.app/assets/logo.png">
+
+  <!-- JSON-LD Product (injecté dynamiquement par produit.js) -->
+  <script type="application/ld+json" id="jsonLdProduct">{}</script>
   <link rel="icon" href="../assets/logo.png" type="image/png">
   <link rel="apple-touch-icon" href="../assets/logo.png">
   <meta name="theme-color" content="#111111">
@@ -112,6 +126,10 @@
 
         <div class="produit-info-col">
           <span class="produit-badge" id="produitBadge"></span>
+          <div class="produit-meta-top">
+            <span class="produit-etat-badge hidden" id="produitEtat"></span>
+            <span class="produit-categorie hidden" id="produitCategorie"></span>
+          </div>
           <h1 id="produitTitre"></h1>
           <p class="produit-prix" id="produitPrix"></p>
           <p class="produit-description" id="produitDescription"></p>
@@ -140,8 +158,7 @@
             </div>
           </div>
 
-          <div class="produit-actions">
-            <button class="btn-acheter" id="btnAcheter">
+          <div class="produit-actions">            <button class="btn-acheter" id="btnAcheter">
               <i data-lucide="zap"></i> Acheter maintenant
             </button>
             <button class="btn-panier" id="btnPanier">
@@ -173,6 +190,12 @@
           </div>
 
           <div id="produit-message" class="produit-msg hidden" role="alert"></div>
+
+          <!-- Infos vendeur (injectées par JS) -->
+          <div id="produitVendeur" class="produit-vendeur hidden"></div>
+
+          <!-- Section livraison (injectée par JS) -->
+          <section id="produitLivraison" class="produit-livraison hidden" aria-label="Livraison"></section>
 
           <section class="produit-reviews" id="reviewsSection" aria-label="Avis clients"></section>
         </div>

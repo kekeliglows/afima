@@ -1,8 +1,16 @@
 
-// Clé publique Kkiapay (PAS la clé secrète — celle-ci ne doit jamais
-// apparaître côté client). Passer à false en production.
-const KKIAPAY_PUBLIC_KEY = 'REMPLACE_PAR_TA_CLE_PUBLIQUE_KKIAPAY';
-const KKIAPAY_SANDBOX = true;
+// ── Clé publique Kkiapay ──
+// TODO : Remplace 'REMPLACE_PAR_TA_CLE_PUBLIQUE_KKIAPAY' par ta vraie clé publique.
+// Tu la trouveras dans ton tableau de bord Kkiapay :
+//   https://app.kkiapay.me → Intégration → Clé publique (sandbox ou production)
+//
+// IMPORTANT :
+//   - Utilise la clé SANDBOX pour les tests (KKIAPAY_SANDBOX = true).
+//   - Passe à la clé de PRODUCTION et mets KKIAPAY_SANDBOX = false avant de déployer.
+//   - Ne mets JAMAIS ta clé secrète ici — seule la clé publique va côté client.
+//   - La clé secrète doit être dans les secrets de ta Edge Function Supabase.
+const KKIAPAY_PUBLIC_KEY = '6a885a904afb9fc4f6f0b780';
+const KKIAPAY_SANDBOX    = true; // ← passer à false en production
 
 // ── ÉCHAPPEMENT HTML (anti-XSS) ──
 function escapeHtml(str) {

@@ -211,3 +211,43 @@
   .commande-header { flex-direction: column; align-items: flex-start; }
   .commande-item-img { width: 44px; height: 44px; }
 }
+
+/* ── NOUVEAUX STATUTS ── */
+.statut-attente      { background: #f3f4f6; color: #6b7280; }
+.statut-preparation  { background: #fefce8; color: #ca8a04; }
+.statut-expediee     { background: #fff7ed; color: #ea580c; }
+.statut-inconnu      { background: #f3f4f6; color: #9ca3af; }
+
+/* ── ADRESSE DE LIVRAISON ── */
+.commande-adresse {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  font-size: 0.8rem;
+  color: #6b7280;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+}
+.commande-adresse svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+/* ── BOUTON CONFIRMER RÉCEPTION ── */
+.btn-confirmer-livraison {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.18s, transform 0.18s;
+  flex-shrink: 0;
+}
+.btn-confirmer-livraison svg { width: 14px; height: 14px; }
+.btn-confirmer-livraison:hover { background: #333; transform: translateY(-1px); }
+.btn-confirmer-livraison:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }

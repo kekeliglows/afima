@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Portefeuille — Afima</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="../assets/logo.png" type="image/png">
+  <link rel="apple-touch-icon" href="../assets/logo.png">
+  <meta name="theme-color" content="#111111">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/index.css">
+  <link rel="stylesheet" href="../css/notifications.css">
+  <link rel="stylesheet" href="../css/wallet.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="../js/utils/currency.js"></script>
+  <script src="../js/utils/notifications.js"></script>
+  <script src="../js/supabase.js"></script>
+  <script src="../js/wallet.js" defer></script>
+</head>
+<body>
+
+  <header>
+    <nav class="navigation" aria-label="Navigation principale">
+      <a href="../index.html" class="logo">
+        <span class="logo-text">af<span class="logo-i"><span class="logo-i-dot"></span><span class="logo-i-stem"></span></span>ma</span>
+      </a>
+      <ul class="header_btn" id="navLinks">
+        <li><a href="dashboard.html" class="btn btn-outline"><i data-lucide="layout-dashboard"></i> Dashboard</a></li>
+        <li><a href="commandes.html" class="btn btn-outline"><i data-lucide="package"></i> Commandes</a></li>
+        <li><a href="profil.html" class="btn btn-outline"><i data-lucide="user"></i> Profil</a></li>
+        <li class="notif-wrapper">
+          <button type="button" class="btn btn-outline" id="btnNotifBell" aria-label="Notifications">
+            <i data-lucide="bell"></i>
+            <span class="notif-badge hidden" id="notifBadge">0</span>
+          </button>
+          <div class="notif-dropdown hidden" id="notifDropdown">
+            <div class="notif-dropdown-header">
+              <span>Notifications</span>
+              <button type="button" id="btnMarkAllRead">Tout marquer comme lu</button>
+            </div>
+            <div id="notifList" class="notif-list"><p class="notif-empty">Chargement...</p></div>
+          </div>
+        </li>
+        <li><button class="btn btn-outline" id="btnLogout"><i data-lucide="log-out"></i> Déconnexion</button></li>
+      </ul>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobileMenu">
+        <i data-lucide="menu" class="icon-menu"></i>
+        <i data-lucide="x" class="icon-close hidden"></i>
+      </button>
+    </nav>
+    <div class="mobile-menu hidden" id="mobileMenu">
+      <a href="dashboard.html" class="mobile-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <a href="commandes.html" class="mobile-link"><i data-lucide="package"></i> Commandes</a>
+      <a href="profil.html" class="mobile-link"><i data-lucide="user"></i> Profil</a>
+      <button class="mobile-link mobile-link-danger" id="btnLogoutMobile"><i data-lucide="log-out"></i> Déconnexion</button>
+    </div>
+  </header>
+
+  <main class="wallet-main">
+
+    <!-- En-tête -->
+    <div class="wallet-header">
+      <h1><i data-lucide="wallet"></i> Mon Portefeuille</h1>
+      <p class="wallet-subtitle">Gérez vos revenus et vos retraits en toute sécurité.</p>
+    </div>
+
+    <!-- Message d'état -->
+    <div id="walletMsg" class="wallet-msg hidden" role="alert"></div>
+
+    <!-- Cartes de solde -->
+    <div class="wallet-balances" id="walletBalances">
+      <div class="balance-card available">
+        <div class="balance-icon"><i data-lucide="circle-check"></i></div>
+        <div class="balance-info">
+          <span class="balance-label">Disponible</span>
+          <span class="balance-val" id="balanceAvailable">—</span>
+        </div>
+      </div>
+      <div class="balance-card pending">
+        <div class="balance-icon"><i data-lucide="clock"></i></div>
+        <div class="balance-info">
+          <span class="balance-label">En attente</span>
+          <span class="balance-val" id="balancePending">—</span>
+        </div>
+      </div>
+      <div class="balance-card withdrawn">
+        <div class="balance-icon"><i data-lucide="arrow-up-right"></i></div>
+        <div class="balance-info">
+          <span class="balance-label">Total retiré</span>
+          <span class="balance-val" id="balanceWithdrawn">—</span>
+        </div>
+      </div>
+      <div class="balance-card earned">
+        <div class="balance-icon"><i data-lucide="trending-up"></i></div>
+        <div class="balance-info">
+          <span class="balance-label">Total gagné</span>
+          <span class="balance-val" id="balanceEarned">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bouton retrait -->
+    <div class="wallet-actions">
+      <button class="btn-withdraw" id="btnWithdraw" type="button">
+        <i data-lucide="banknote"></i> Demander un retrait
+      </button>
+    </div>
+
+    <!-- Modal retrait -->
+    <div class="wallet-modal hidden" id="withdrawModal" role="dialog" aria-modal="true" aria-labelledby="withdrawTitle">
+      <div class="wallet-modal-box">
+        <div class="wallet-modal-header">
+          <h2 id="withdrawTitle"><i data-lucide="banknote"></i> Retrait</h2>
+          <button class="wallet-modal-close" id="btnCloseWithdraw" aria-label="Fermer"><i data-lucide="x"></i></button>
+        </div>
+
+        <p class="withdraw-info">
+          Minimum : <strong>2 500 FCFA</strong> · Frais : <strong>5 %</strong><br>
+          Solde disponible : <strong id="withdrawAvailable">—</strong>
+        </p>
+
+        <form id="withdrawForm" novalidate>
+          <div class="input-group">
+            <label for="withdrawAmount">Montant à retirer (FCFA)</label>
+            <input type="number" id="withdrawAmount" min="2500" step="1" placeholder="Ex : 10 000" required>
+          </div>
+
+          <div class="withdraw-net hidden" id="withdrawNet">
+            Vous recevrez : <strong id="withdrawNetVal">—</strong>
+          </div>
+
+          <div class="input-group">
+            <label for="withdrawMethod">Moyen de paiement</label>
+            <select id="withdrawMethod" required>
+              <option value="">Choisissez un moyen de paiement</option>
+            </select>
+          </div>
+
+          <p class="withdraw-add-method">
+            Aucun moyen enregistré ? <a href="profil.html">Ajoutez-en un depuis votre profil.</a>
+          </p>
+
+          <div id="withdrawFormMsg" class="wallet-msg hidden"></div>
+
+          <button type="submit" class="btn-submit-withdraw" id="btnSubmitWithdraw">
+            <i data-lucide="send"></i> Confirmer le retrait
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Historique des transactions -->
+    <section class="wallet-history">
+      <h2>Historique des transactions</h2>
+      <div id="walletTxList" class="wallet-tx-list">
+        <div class="wallet-skeleton">
+          <div class="sk-tx"></div>
+          <div class="sk-tx"></div>
+          <div class="sk-tx"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <img src="../assets/logo.png" alt="afima">
+        <span>afima</span>
+      </div>
+      <p>&copy; 2026 afima. Tous droits réservés.</p>
+      <div class="footer-links">
+        <a href="a-propos.html">À propos</a>
+        <a href="faq.html">FAQ</a>
+        <a href="conditions-utilisation.html">Conditions d'utilisation</a>
+        <a href="politique-confidentialite.html">Politique de confidentialité</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>lucide.createIcons();</script>
+</body>
+</html>

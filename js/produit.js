@@ -92,14 +92,75 @@ function renderProduit(p, userId) {
   currentProduit = p;
   document.getElementById('produitSkeleton').classList.add('hidden');
   document.getElementById('produitContent').classList.remove('hidden');
-  document.getElementById('btnContactVendeur').href = `messages.html?to=${encodeURIComponent(p.user_id)}`;
+  document.getElementById('btnContactVendeur').href = `messages.html?to=${encodeURIComponent(p.user_id)}&product_id=${encodeURIComponent(p.id)}&product_titre=${encodeURIComponent(p.titre)}`;
 
-  document.title = `${p.titre} — afima`;
+  document.title = `${p.titre} — Afima`;
+
+  // ── SEO DYNAMIQUE ──
+  // Met à jour les balises meta, Open Graph, Twitter Card et JSON-LD
+  // avec les données réelles du produit une fois chargé.
+  const produitUrl = `https://afima-ruby.vercel.app/front-end/produit.html?id=${encodeURIComponent(p.id)}`;
+  const produitImg = p.image_url || 'https://afima-ruby.vercel.app/assets/logo.png';
+  const produitDesc = (p.description || '').slice(0, 155).trim() || `Achetez "${p.titre}" sur Afima en toute sécurité.`;
+
+  // <meta name="description">
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if (metaDesc) metaDesc.setAttribute('content', produitDesc);
+
+  // <link rel="canonical">
+  const canonical = document.querySelector('link[rel="canonical"]');
+  if (canonical) canonical.setAttribute('href', produitUrl);
+
+  // Open Graph
+  const ogMetas = {
+    'og:title':       `${p.titre} — Afima`,
+    'og:description': produitDesc,
+    'og:image':       produitImg,
+    'og:url':         produitUrl,
+  };
+  Object.entries(ogMetas).forEach(([prop, val]) => {
+    const el = document.querySelector(`meta[property="${prop}"]`);
+    if (el) el.setAttribute('content', val);
+  });
+
+  // Twitter Card
+  const twMetas = {
+    'twitter:title':       `${p.titre} — Afima`,
+    'twitter:description': produitDesc,
+    'twitter:image':       produitImg,
+  };
+  Object.entries(twMetas).forEach(([name, val]) => {
+    const el = document.querySelector(`meta[name="${name}"]`);
+    if (el) el.setAttribute('content', val);
+  });
+
+  // JSON-LD Product
+  const jsonLdEl = document.getElementById('jsonLdProduct');
+  if (jsonLdEl) {
+    jsonLdEl.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      'name': p.titre,
+      'description': p.description || '',
+      'image': produitImg,
+      'url': produitUrl,
+      'offers': {
+        '@type': 'Offer',
+        'priceCurrency': p.devise || 'XOF',
+        'price': p.prix,
+        'availability': p.stock > 0
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        'url': produitUrl,
+        'seller': { '@type': 'Organization', 'name': 'Afima' }
+      },
+      'isPartOf': { '@type': 'WebSite', 'name': 'Afima', 'url': 'https://afima-ruby.vercel.app/' }
+    });
+  }
 
   document.getElementById('produitImg').src = p.image_url || 'https://placehold.co/600x600/f3f4f6/9ca3af?text=No+Image';
   document.getElementById('produitImg').alt = p.titre;
-  document.getElementById('produitTitre').textContent = p.titre;
-  const wishlistButton = document.getElementById('wishlistButton');
+  document.getElementById('produitTitre').textContent = p.titre;  const wishlistButton = document.getElementById('wishlistButton');
   if (wishlistButton) {
     const syncFavoriteState = async () => {
       const ids = await Wishlist.getWishlistIds({ supabaseClient, userId });
@@ -117,6 +178,62 @@ function renderProduit(p, userId) {
   bindProductCurrencySelector();
   document.getElementById('produitDescription').textContent = p.description || '';
   document.getElementById('produitDate').textContent = 'Publié le ' + new Date(p.created_at).toLocaleDateString('fr-FR');
+
+  // ── Infos supplémentaires (état, catégorie) ──
+  const etatEl = document.getElementById('produitEtat');
+  if (etatEl) {
+    etatEl.textContent = p.etat === 'occasion' ? 'Occasion' : 'Neuf';
+    etatEl.className = `produit-etat-badge ${p.etat === 'occasion' ? 'occasion' : 'neuf'}`;
+  }
+  const catEl = document.getElementById('produitCategorie');
+  if (catEl && p.categorie) { catEl.textContent = p.categorie; catEl.classList.remove('hidden'); }
+
+  // ── Livraison ──
+  const livraisonSection = document.getElementById('produitLivraison');
+  if (livraisonSection) {
+    const MODES = { domicile:'Livraison à domicile', relais:'Point relais', transporteur:'Transporteur',
+                    vendeur:'Par le vendeur', retrait:'Retrait chez le vendeur', personnalise:'Personnalisé' };
+    const ZONES = { ville:'Même ville', region:'Même région', pays:'Tout le pays', selection:'Pays sélectionnés' };
+    const DELAIS = { '24h':'24h', '48h':'48h', '3-5j':'3 à 5 jours', custom: p.delai_custom || 'Voir description' };
+    const mode  = MODES[p.mode_livraison]  || p.mode_livraison || '—';
+    const zone  = ZONES[p.zone_livraison]  || p.zone_livraison || '—';
+    const delai = DELAIS[p.delai_livraison] || p.delai_livraison || '—';
+    const frais = p.frais_livraison_type === 'gratuit'
+      ? 'Gratuit'
+      : p.frais_livraison > 0
+        ? Currency.formatPrice(p.frais_livraison, 'XOF', Currency.getUserCurrency())
+        : 'Voir description';
+
+    livraisonSection.innerHTML = `
+      <h3 class="livraison-titre"><i data-lucide="truck"></i> Livraison</h3>
+      <ul class="livraison-details">
+        <li><i data-lucide="package"></i> <strong>Mode :</strong> ${escapeHtml(mode)}</li>
+        <li><i data-lucide="map-pin"></i> <strong>Zone :</strong> ${escapeHtml(zone)}</li>
+        <li><i data-lucide="clock"></i> <strong>Délai :</strong> ${escapeHtml(delai)}</li>
+        <li><i data-lucide="coins"></i> <strong>Frais :</strong> ${escapeHtml(frais)}</li>
+        ${p.politique_retour ? `<li><i data-lucide="rotate-ccw"></i> <strong>Retours :</strong> ${escapeHtml(p.politique_retour)}</li>` : ''}
+      </ul>`;
+    livraisonSection.classList.remove('hidden');
+    lucide.createIcons();
+  }
+
+  // ── Infos vendeur (vérification) ──
+  const vendeurSection = document.getElementById('produitVendeur');
+  if (vendeurSection && p.user_id) {
+    supabaseClient.from('profiles').select('full_name, ville, is_verified_seller').eq('id', p.user_id).maybeSingle()
+      .then(({ data: prof }) => {
+        if (!prof) return;
+        vendeurSection.innerHTML = `
+          <div class="vendeur-info">
+            <i data-lucide="user"></i>
+            <span>${escapeHtml(prof.full_name || 'Vendeur')}</span>
+            ${prof.is_verified_seller ? '<span class="badge-verifie" title="Identité vérifiée">✓ Vérifié</span>' : ''}
+            ${prof.ville ? `<span class="vendeur-ville"><i data-lucide="map-pin"></i> ${escapeHtml(prof.ville)}</span>` : ''}
+          </div>`;
+        vendeurSection.classList.remove('hidden');
+        lucide.createIcons();
+      });
+  }
 
   const badge = document.getElementById('produitBadge');
   if (p.stock > 0) {

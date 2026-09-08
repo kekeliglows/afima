@@ -22,6 +22,10 @@ let audioContext = null;
 let analyser = null;
 let dataArray = null;
 let animationId = null;
+// Timer et durée minimum pour l'enregistrement vocal
+let voiceStartTime = null;
+let voiceTimerInterval = null;
+const VOICE_MIN_DURATION_MS = 500; // annule si < 500ms
 
 // Présence en temps réel
 let presenceChannel = null;
@@ -54,22 +58,35 @@ async function initMessages() {
     document.getElementById('chatInputForm')?.addEventListener('submit', sendMessage);
     document.getElementById('chatBack')?.addEventListener('click', () => switchChat(null));
 
-    // Gestion du microphone
+    // Gestion du microphone — pression maintenue pour enregistrer
     const voiceBtn = document.getElementById('chatVoiceBtn');
     if (voiceBtn) {
-      voiceBtn.addEventListener('mousedown', startVoiceRecording);
-      voiceBtn.addEventListener('mouseup', stopVoiceRecording);
+      // Souris (desktop)
+      voiceBtn.addEventListener('mousedown',  startVoiceRecording);
+      voiceBtn.addEventListener('mouseup',    stopVoiceRecording);
       voiceBtn.addEventListener('mouseleave', cancelVoiceRecording);
-      voiceBtn.addEventListener('touchstart', startVoiceRecording, { passive: false });
-      voiceBtn.addEventListener('touchend', stopVoiceRecording);
+      // Tactile (mobile)
+      voiceBtn.addEventListener('touchstart',  startVoiceRecording,  { passive: false });
+      voiceBtn.addEventListener('touchend',    stopVoiceRecording);
+      voiceBtn.addEventListener('touchcancel', cancelVoiceRecording); // ← interruption OS (appel entrant, etc.)
     }
 
-    // Gestion des pièces jointes
+    // Gestion des pièces jointes (limite 25 Mo)
     const attachBtn = document.getElementById('chatAttachBtn');
     const fileInput = document.getElementById('fileInput');
+    const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25 Mo
     if (attachBtn && fileInput) {
       attachBtn.addEventListener('click', () => fileInput.click());
-      fileInput.addEventListener('change', sendFileMessage);
+      fileInput.addEventListener('change', () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        if (file.size > MAX_FILE_SIZE) {
+          alert('Fichier trop lourd (25 Mo maximum).');
+          fileInput.value = '';
+          return;
+        }
+        sendFileMessage();
+      });
     }
 
     // Indicateurs de saisie (typing)
@@ -240,6 +257,8 @@ async function openConversationFromUrl() {
   const existing = conversations.find(c => c.otherId === toId);
   if (existing) {
     await selectConversation(toId);
+    // Même si la conv existe, on affiche quand même le contexte produit si présent
+    fillProductContext(params);
     return;
   }
 
@@ -272,6 +291,28 @@ async function openConversationFromUrl() {
   renderChat();
   switchChat(toId);
   subscribeToPresence(toId);
+  fillProductContext(params);
+}
+
+/**
+ * Si l'URL contient ?product_id=X&product_titre=Y (envoyé depuis produit.js),
+ * on affiche un lien vers le produit dans la topbar pour donner le contexte.
+ */
+function fillProductContext(params) {
+  const productId    = params.get('product_id');
+  const productTitre = params.get('product_titre');
+  const linkEl       = document.getElementById('chatTopbarProduct');
+  if (!linkEl) return;
+
+  if (productId && productTitre) {
+    linkEl.href = `produit.html?id=${encodeURIComponent(productId)}`;
+    linkEl.title = `Voir : ${decodeURIComponent(productTitre)}`;
+    linkEl.innerHTML = `<i data-lucide="package"></i> <span style="font-size:.8rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(decodeURIComponent(productTitre))}</span>`;
+    linkEl.classList.remove('hidden');
+    lucide.createIcons();
+  } else {
+    linkEl.classList.add('hidden');
+  }
 }
 
 // =========================
@@ -688,18 +729,40 @@ async function sendAudioMessage(filePath) {
 // =========================
 //  ENREGISTREMENT VOCAL & ÉGALISEUR
 // =========================
-async function startVoiceRecording() {
+
+function updateVoiceTimer() {
+  if (!voiceStartTime) return;
+  const elapsed = Math.floor((Date.now() - voiceStartTime) / 1000);
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const ss = String(elapsed % 60).padStart(2, '0');
+  const input = document.getElementById('chatInput');
+  if (input) input.placeholder = `🔴 ${mm}:${ss} — Relâchez pour envoyer`;
+}
+
+async function startVoiceRecording(e) {
+  if (e) e.preventDefault(); // évite le focus/scroll sur mobile
   if (isRecording) return;
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mimeTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
-    const mime = mimeTypes.find(t => MediaRecorder.isTypeSupported(t));
-    mediaRecorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+
+    // Choisir le meilleur codec disponible sur le navigateur/OS
+    const mimeTypes = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/ogg;codecs=opus',
+      'audio/mp4',
+    ];
+    const mime = mimeTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
+    mediaRecorder = mime
+      ? new MediaRecorder(stream, { mimeType: mime })
+      : new MediaRecorder(stream);
 
     audioChunks = [];
     isCancellingRecording = false;
+    voiceStartTime = Date.now();
 
+    // ── Égaliseur Web Audio ──
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioContext.createMediaStreamSource(stream);
     analyser = audioContext.createAnalyser();
@@ -711,20 +774,31 @@ async function startVoiceRecording() {
     if (equalizer) equalizer.style.display = 'flex';
     animateEqualizer();
 
+    // ── Feedback visuel ──
     const voiceBtn = document.getElementById('chatVoiceBtn');
-    const input = document.getElementById('chatInput');
+    const input    = document.getElementById('chatInput');
     voiceBtn?.classList.add('recording');
-    if (input) {
-      input.placeholder = 'Enregistrement... (relâchez pour envoyer)';
-      input.disabled = true;
-    }
+    if (input) input.disabled = true;
 
+    // Timer affiché dans le placeholder
+    updateVoiceTimer();
+    voiceTimerInterval = setInterval(updateVoiceTimer, 1000);
+
+    // ── Collecte des chunks ──
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) audioChunks.push(e.data);
     };
 
+    // ── Traitement après arrêt ──
     mediaRecorder.onstop = async () => {
+      clearInterval(voiceTimerInterval);
+      voiceTimerInterval = null;
       stopEqualizer();
+
+      const equalizer = document.getElementById('voiceEqualizer');
+      const input     = document.getElementById('chatInput');
+      const voiceBtn  = document.getElementById('chatVoiceBtn');
+
       if (equalizer) equalizer.style.display = 'none';
       if (input) {
         input.placeholder = 'Écrire un message...';
@@ -732,46 +806,73 @@ async function startVoiceRecording() {
       }
       voiceBtn?.classList.remove('recording');
 
+      // Arrêt propre du flux micro
+      stream.getTracks().forEach(t => t.stop());
+      isRecording = false;
+
+      // ── Annulation explicite (glissement / touchcancel) ──
       if (isCancellingRecording) {
-        stream.getTracks().forEach(t => t.stop());
         audioChunks = [];
-        isRecording = false;
         isCancellingRecording = false;
+        await updatePresenceStatus('online');
+        return;
+      }
+
+      // ── Trop court → on annule silencieusement ──
+      const duration = Date.now() - (voiceStartTime || Date.now());
+      voiceStartTime = null;
+      if (duration < VOICE_MIN_DURATION_MS) {
+        audioChunks = [];
         await updatePresenceStatus('online');
         return;
       }
 
       const mimeType = mediaRecorder.mimeType || 'audio/webm';
       const blob = new Blob(audioChunks, { type: mimeType });
+      audioChunks = [];
 
-      // CONTRÔLE ANTI-0 OCTET (Évite l'erreur HTTP 416)
-      if (blob.size === 0) {
-        console.warn('Vocal vide (0 octet). Envoi annulé.');
-        stream.getTracks().forEach(t => t.stop());
-        isRecording = false;
+      // ── Blob vide (cas edge sur certains navigateurs) ──
+      if (blob.size < 100) {
+        console.warn('Blob vocal trop petit (%d octets). Envoi annulé.', blob.size);
         await updatePresenceStatus('online');
         return;
       }
 
-      const ext = mimeType.includes('ogg') ? 'ogg' : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a' : 'webm';
+      // ── Extension selon le codec ──
+      const ext = mimeType.includes('ogg')  ? 'ogg'
+                : mimeType.includes('mp4') || mimeType.includes('m4a') ? 'm4a'
+                : 'webm';
       const filePath = `${currentUserId}/voice_${Date.now()}.${ext}`;
+
+      // ── Indicateur d'envoi ──
+      if (input) {
+        input.placeholder = '📤 Envoi du vocal...';
+        input.disabled = true;
+      }
 
       try {
         const { error: uploadError } = await sb.storage
           .from('voice-notes')
-          .upload(filePath, blob, { contentType: blob.type || mimeType, cacheControl: '3600', upsert: true });
+          .upload(filePath, blob, {
+            contentType: blob.type || mimeType,
+            cacheControl:  '3600',
+            upsert:        false, // false pour éviter d'écraser un fichier existant par erreur
+          });
 
         if (uploadError) {
           console.error('Upload vocal :', uploadError);
-          alert('Erreur d\'envoi du vocal : ' + uploadError.message);
+          alert('Impossible d\'envoyer le message vocal : ' + uploadError.message);
         } else {
           await sendAudioMessage(filePath);
         }
       } catch (err) {
         console.error('Erreur traitement audio :', err);
+        alert('Une erreur est survenue lors de l\'envoi du vocal.');
       } finally {
-        stream.getTracks().forEach(t => t.stop());
-        isRecording = false;
+        if (input) {
+          input.placeholder = 'Écrire un message...';
+          input.disabled = false;
+        }
         await updatePresenceStatus('online');
       }
     };
@@ -781,17 +882,30 @@ async function startVoiceRecording() {
     await updatePresenceStatus('recording');
 
   } catch (err) {
-    console.error('Microphone :', err);
-    alert('Autorisez l\'accès au microphone.');
+    // Micro refusé ou non disponible
+    isRecording = false;
+    clearInterval(voiceTimerInterval);
+    voiceTimerInterval = null;
+    voiceStartTime = null;
     stopEqualizer();
+
     const equalizer = document.getElementById('voiceEqualizer');
-    const input = document.getElementById('chatInput');
+    const input     = document.getElementById('chatInput');
     if (equalizer) equalizer.style.display = 'none';
     if (input) {
       input.placeholder = 'Écrire un message...';
       input.disabled = false;
     }
     document.getElementById('chatVoiceBtn')?.classList.remove('recording');
+
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      alert('Accès au microphone refusé. Autorisez-le dans les paramètres de votre navigateur.');
+    } else if (err.name === 'NotFoundError') {
+      alert('Aucun microphone détecté sur cet appareil.');
+    } else {
+      alert('Impossible d\'accéder au microphone : ' + err.message);
+    }
+    console.error('Microphone :', err);
   }
 }
 

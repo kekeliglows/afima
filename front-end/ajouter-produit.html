@@ -275,6 +275,39 @@
         </div>
 
 
+        <!-- ÉTAT + CATÉGORIE -->
+
+        <div class="row-group">
+
+          <div class="input-group">
+            <label for="etat">État du produit</label>
+            <select id="etat" required>
+              <option value="neuf">Neuf</option>
+              <option value="occasion">Occasion</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="categorie">Catégorie</label>
+            <select id="categorie">
+              <option value="">Choisissez une catégorie</option>
+              <option value="Électronique">Électronique</option>
+              <option value="Mode & Vêtements">Mode & Vêtements</option>
+              <option value="Maison & Décoration">Maison & Décoration</option>
+              <option value="Alimentation">Alimentation</option>
+              <option value="Beauté & Santé">Beauté & Santé</option>
+              <option value="Sports & Loisirs">Sports & Loisirs</option>
+              <option value="Véhicules">Véhicules</option>
+              <option value="Immobilier">Immobilier</option>
+              <option value="Livres & Éducation">Livres & Éducation</option>
+              <option value="Services">Services</option>
+              <option value="Autre">Autre</option>
+            </select>
+          </div>
+
+        </div>
+
+
         <!-- PRIX + STOCK -->
 
         <div class="row-group">
@@ -405,6 +438,78 @@
 
           </div>
 
+        </div>
+
+
+        <!-- ── CONFIGURATION DE LIVRAISON ── -->
+
+        <div class="input-group" style="margin-top:1.5rem">
+          <p class="image-section-label" style="margin-bottom:0.75rem">Configuration de la livraison</p>
+        </div>
+
+        <div class="row-group">
+
+          <div class="input-group">
+            <label for="modeLivraison">Mode de livraison</label>
+            <select id="modeLivraison" required>
+              <option value="vendeur">Par le vendeur</option>
+              <option value="domicile">Livraison à domicile</option>
+              <option value="relais">Point relais</option>
+              <option value="transporteur">Transporteur</option>
+              <option value="retrait">Retrait chez le vendeur</option>
+              <option value="personnalise">Personnalisé</option>
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="zoneLivraison">Zone de livraison</label>
+            <select id="zoneLivraison" required>
+              <option value="ville">Même ville</option>
+              <option value="region">Même région</option>
+              <option value="pays">Tout le pays</option>
+              <option value="selection">Pays sélectionnés</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="row-group">
+
+          <div class="input-group">
+            <label for="fraisType">Tarification livraison</label>
+            <select id="fraisType" required>
+              <option value="gratuit">Gratuit</option>
+              <option value="fixe">Prix fixe</option>
+              <option value="zone">Prix selon zone</option>
+              <option value="poids">Prix selon poids</option>
+            </select>
+          </div>
+
+          <div class="input-group" id="fraisMontantGroup" style="display:none">
+            <label for="fraisMontant">Frais de livraison (FCFA)</label>
+            <input type="number" id="fraisMontant" placeholder="Ex : 1500" min="0" step="1">
+          </div>
+
+          <div class="input-group">
+            <label for="delaiLivraison">Délai de livraison</label>
+            <select id="delaiLivraison">
+              <option value="24h">24h</option>
+              <option value="48h">48h</option>
+              <option value="3-5j" selected>3 à 5 jours</option>
+              <option value="custom">Personnalisé</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="input-group" id="delaiCustomGroup" style="display:none">
+          <label for="delaiCustom">Précisez le délai</label>
+          <input type="text" id="delaiCustom" placeholder="Ex : 1 à 2 semaines">
+        </div>
+
+        <div class="input-group">
+          <label for="politiqueRetour">Politique de retour (optionnel)</label>
+          <textarea id="politiqueRetour" rows="2" placeholder="Ex : Retour accepté sous 7 jours si le produit est intact."></textarea>
         </div>
 
 

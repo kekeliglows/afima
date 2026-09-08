@@ -301,3 +301,37 @@ a.produit-card {
   .sort-select { flex: 1; }
   .search-wrapper { flex: 1; }
 }
+
+/* ── BADGES ÉTAT / CATÉGORIE SUR LES CARTES ── */
+.card-etat-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  pointer-events: none;
+}
+.card-etat-badge.neuf     { background: #eff6ff; color: #2563eb; }
+.card-etat-badge.occasion { background: #fffbeb; color: #d97706; }
+
+.card-categorie-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+  margin-bottom: 2px;
+  width: fit-content;
+}
+
+/* ── FILTRES SUPPLÉMENTAIRES ── */
+@media (max-width: 600px) {
+  .catalogue-controls { flex-direction: column; }
+  .sort-select { width: 100%; }
+}

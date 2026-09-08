@@ -507,3 +507,121 @@
   .produit-info-col h1 { font-size: 1.4rem; }
   .produit-prix { font-size: 1.6rem; }
 }
+
+/* ── BADGES ÉTAT / CATÉGORIE ── */
+.produit-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.produit-etat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.produit-etat-badge.neuf     { background: #eff6ff; color: #2563eb; }
+.produit-etat-badge.occasion { background: #fffbeb; color: #d97706; }
+.produit-etat-badge.hidden   { display: none; }
+
+.produit-categorie {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+.produit-categorie.hidden { display: none; }
+
+/* ── SECTION LIVRAISON ── */
+.produit-livraison {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-top: 6px;
+}
+.produit-livraison.hidden { display: none; }
+
+.livraison-titre {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 12px;
+}
+.livraison-titre svg { width: 16px; height: 16px; }
+
+.livraison-details {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.livraison-details li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #374151;
+  line-height: 1.5;
+}
+.livraison-details li svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 3px; color: #6b7280; }
+.livraison-details li strong { color: #111; }
+
+/* ── INFO VENDEUR ── */
+.produit-vendeur {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  margin-top: 4px;
+}
+.produit-vendeur.hidden { display: none; }
+
+.vendeur-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111;
+}
+.vendeur-info svg { width: 16px; height: 16px; color: #6b7280; }
+
+.badge-verifie {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.vendeur-ville {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+.vendeur-ville svg { width: 12px; height: 12px; }

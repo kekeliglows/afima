@@ -285,3 +285,49 @@ form {
     min-height: 220px;
   }
 }
+
+/* ── SELECTS (état, catégorie, livraison) ── */
+.input-group select {
+  padding: 11px 14px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.92rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fafafa;
+  color: #111;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%23111' stroke-width='1.5' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.input-group select:focus {
+  border-color: #111;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(17,17,17,0.06);
+}
+
+/* ── SECTION LIVRAISON (visuelle séparation) ── */
+.image-section-label {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #111;
+  letter-spacing: 0.2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* Row-group 3 colonnes pour mode/zone/délai */
+.row-group-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 600px) {
+  .row-group-3 { grid-template-columns: 1fr; }
+}

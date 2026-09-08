@@ -56,6 +56,8 @@ async function init() {
 
   document.getElementById('searchInput').addEventListener('input', renderProduits);
   document.getElementById('sortSelect').addEventListener('change', renderProduits);
+  document.getElementById('categorieFilter')?.addEventListener('change', renderProduits);
+  document.getElementById('etatFilter')?.addEventListener('change', renderProduits);
 
   const logout = async () => { await supabaseClient.auth.signOut(); window.location.href = '../index.html'; };
   document.getElementById('btnLogout')?.addEventListener('click', logout);
@@ -137,13 +139,16 @@ function bindCurrencySelector() {
 }
 
 function renderProduits() {
-  const query = document.getElementById('searchInput').value.toLowerCase().trim();
-  const sort  = document.getElementById('sortSelect').value;
-  const grid  = document.getElementById('produits-grid');
+  const query     = document.getElementById('searchInput').value.toLowerCase().trim();
+  const sort      = document.getElementById('sortSelect').value;
+  const categorie = document.getElementById('categorieFilter')?.value || '';
+  const etat      = document.getElementById('etatFilter')?.value || '';
+  const grid      = document.getElementById('produits-grid');
 
   let list = allProduits.filter(p =>
-    p.titre.toLowerCase().includes(query) ||
-    (p.description || '').toLowerCase().includes(query)
+    (p.titre.toLowerCase().includes(query) || (p.description || '').toLowerCase().includes(query)) &&
+    (!categorie || p.categorie === categorie) &&
+    (!etat      || p.etat      === etat)
   );
 
   if (sort === 'prix-asc')  list.sort((a, b) => a.prix - b.prix);
@@ -164,6 +169,8 @@ function renderProduits() {
     const stockBadge = p.stock > 0
       ? `<span class="card-stock-badge">${p.stock} en stock</span>`
       : `<span class="card-stock-badge out">Rupture</span>`;
+    const etatBadge = p.etat === 'occasion' ? `<span class="card-etat-badge occasion">Occasion</span>` : `<span class="card-etat-badge neuf">Neuf</span>`;
+    const categorieBadge = p.categorie ? `<span class="card-categorie-badge">${escapeHtml(p.categorie)}</span>` : '';
     const isFav = wishlist.some(item => item.id === p.id);
     const titreSafe = escapeHtml(p.titre);
     return `
@@ -172,12 +179,14 @@ function renderProduits() {
           <button class="wishlist-btn ${isFav ? 'active' : ''}" data-id="${escapeHtml(p.id)}" type="button" aria-label="Ajouter aux favoris">
             <i data-lucide="heart"></i>
           </button>
+          ${etatBadge}
           <a href="produit.html?id=${encodeURIComponent(p.id)}" aria-label="Voir ${titreSafe}">
             <img src="${escapeHtml(p.image_url || 'https://placehold.co/400x300/f3f4f6/9ca3af?text=No+Image')}"
                  alt="${titreSafe}" loading="lazy" width="400" height="200">
           </a>
         </div>
         <a href="produit.html?id=${encodeURIComponent(p.id)}" class="card-body" aria-label="Voir ${titreSafe}">
+          ${categorieBadge}
           <p class="card-titre">${titreSafe}</p>
           <p class="card-description">${escapeHtml(p.description || '')}</p>
           <div class="card-footer">
